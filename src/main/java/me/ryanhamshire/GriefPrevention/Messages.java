@@ -42,6 +42,8 @@ public enum Messages
     OnlySellBlocks,
     BlockPurchaseCost,
     ClaimBlockLimit,
+    InvalidBlockBuyAmount,
+    InvalidBlockSellAmount,
     InsufficientFunds,
     MaxBonusReached,
     PurchaseConfirmation,
