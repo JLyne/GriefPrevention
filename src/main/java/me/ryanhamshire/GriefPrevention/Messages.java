@@ -47,6 +47,7 @@ public enum Messages
     InsufficientFunds,
     MaxBonusReached,
     PurchaseConfirmation,
+    RedeemConfirmation,
     OnlyPurchaseBlocks,
     BlockSaleValue,
     NotEnoughBlocksForSale,

@@ -20,6 +20,9 @@ package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
+import com.griefprevention.vouchers.VoucherEventHandler;
+import com.griefprevention.vouchers.VoucherItemProvider;
+import com.griefprevention.vouchers.VoucherManager;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
@@ -56,6 +59,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import uk.co.notnull.CustomItems.api.CustomItems;
 
 import java.io.File;
 import java.io.IOException;
@@ -104,6 +108,8 @@ public class GriefPrevention extends JavaPlugin
     // Player event handler
     PlayerEventHandler playerEventHandler;
     //configuration variables, loaded/saved from a config.yml
+
+    private VoucherManager voucherManager;
 
     //claim mode for each world
     public ConcurrentHashMap<World, ClaimsMode> config_claims_worldModes;
@@ -260,6 +266,7 @@ public class GriefPrevention extends JavaPlugin
 
     //how long to wait before deciding a player is staying online or staying offline, for notication messages
     public static final int NOTIFICATION_SECONDS = 20;
+    private VoucherItemProvider voucherItemProvider;
 
     //adds a server log entry
     public static synchronized void AddLogEntry(String entry, CustomLogEntryTypes customLogType, boolean excludeFromServerLogs)
@@ -402,6 +409,16 @@ public class GriefPrevention extends JavaPlugin
         //vault-based economy integration
         economyHandler = new EconomyHandler(this);
         pluginManager.registerEvents(economyHandler, this);
+
+        //voucher handling
+        voucherManager = new VoucherManager(this);
+        pluginManager.registerEvents(new VoucherEventHandler(this), this);
+
+        boolean customItemsEnabled = Bukkit.getPluginManager().isPluginEnabled("GriefPrevention");
+
+        if(customItemsEnabled) {
+            enableCustomItems();
+        }
 
         //cache offline players
         OfflinePlayer[] offlinePlayers = this.getServer().getOfflinePlayers();
@@ -3313,6 +3330,12 @@ public class GriefPrevention extends JavaPlugin
         //dump any remaining unwritten log entries
         this.customLogger.WriteEntries();
 
+        boolean customItemsEnabled = Bukkit.getPluginManager().isPluginEnabled("GriefPrevention");
+
+        if(customItemsEnabled) {
+            disableCustomItems();
+        }
+
         AddLogEntry("GriefPrevention disabled.");
     }
 
@@ -3855,5 +3878,22 @@ public class GriefPrevention extends JavaPlugin
             portalReturnTaskMap.put(player.getUniqueId(), task).cancel();
         else
             portalReturnTaskMap.put(player.getUniqueId(), task);
+    }
+
+    public VoucherManager getVoucherManager() {
+        return voucherManager;
+    }
+
+    public void enableCustomItems() {
+        voucherItemProvider = new VoucherItemProvider(voucherManager);
+        CustomItems customItems = (CustomItems) Bukkit.getPluginManager().getPlugin("CustomItems");
+        customItems.getItemManager().registerProvider(voucherItemProvider);
+    }
+
+    public void disableCustomItems() {
+        if(voucherItemProvider != null) {
+            CustomItems customItems = (CustomItems) Bukkit.getPluginManager().getPlugin("CustomItems");
+            customItems.getItemManager().unregisterProvider(voucherItemProvider);
+        }
     }
 }
