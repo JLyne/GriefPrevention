@@ -64,17 +64,10 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# IntelliJ
-workspace.xml
-tasks.xml
-.idea/libraries
-.idea/copyright
 out/
 target/
 *.MF
 *.name
-.idea
-*.iml
 
 # VS Code
 .vscode/
