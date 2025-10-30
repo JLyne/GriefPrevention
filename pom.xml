@@ -163,9 +163,9 @@
     <dependencies>
         <!-- Bukkit API. Bukkit has never ever deployed a release version -->
         <dependency>
-            <version>1.21-R0.1-SNAPSHOT</version>
             <groupId>org.purpurmc.purpur</groupId>
             <artifactId>purpur-api</artifactId>
+            <version>1.21.10-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!-- Annotations for nullity and other behaviors -->

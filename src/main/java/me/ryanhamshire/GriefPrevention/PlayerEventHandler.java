@@ -41,6 +41,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Animals;
+import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.Donkey;
 import org.bukkit.entity.Entity;
@@ -1120,6 +1121,34 @@ class PlayerEventHandler implements Listener
             }
         }
 
+        //if entity is a copper golem and has a summoner, apply special rules
+        if (entity instanceof CopperGolem golem)
+        {
+            if (golem.getSummoner() != null)
+            {
+                UUID ownerID = golem.getSummoner();
+
+                //if the player interacting is the owner or an admin in ignore claims mode, always allow
+                if (player.getUniqueId().equals(ownerID) || playerData.ignoreClaims)
+                {
+                    return;
+                }
+                if (!instance.pvpRulesApply(entity.getLocation().getWorld()) || instance.config_pvp_protectPets)
+                {
+                    //otherwise disallow
+                    OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
+                    String ownerName = owner.getName();
+                    if (ownerName == null) ownerName = "someone";
+                    String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
+                    if (player.hasPermission("griefprevention.ignoreclaims"))
+                        message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                    GriefPrevention.sendMessage(player, TextMode.Err, message);
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         //don't allow interaction with item frames or armor stands in claimed areas without build permission
         if (entity.getType() == EntityType.ARMOR_STAND || entity instanceof Hanging)
         {
@@ -1677,6 +1706,7 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.COMPARATOR ||
                                 clickedBlockType == Material.REDSTONE_WIRE ||
                                 Tag.FLOWER_POTS.isTagged(clickedBlockType) ||
+                                Tag.COPPER_GOLEM_STATUES.isTagged(clickedBlockType) ||
                                 Tag.CANDLES.isTagged(clickedBlockType)
                 ))
         {

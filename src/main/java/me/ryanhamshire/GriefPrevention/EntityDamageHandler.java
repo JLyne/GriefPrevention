@@ -7,6 +7,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.Donkey;
 import org.bukkit.entity.Entity;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -248,8 +250,8 @@ public class EntityDamageHandler implements Listener
     {
         // If PVP is enabled, the damaged entity is not a pet, or the pet has no owner, allow.
         if (instance.pvpRulesApply(event.damaged().getWorld())
-                || !(event.damaged() instanceof Tameable tameable)
-                || !tameable.isTamed())
+                || (!(event.damaged() instanceof Tameable tameable && tameable.isTamed())
+                && !(event.damaged() instanceof CopperGolem golem && golem.getSummoner() != null)))
         {
             return false;
         }
@@ -635,6 +637,9 @@ public class EntityDamageHandler implements Listener
         //if entity is tameable and has an owner, apply special rules
         if (handlePetDamageByEntity(event, attacker, sendMessages)) return true;
 
+        //if entity is a Copper Golem and has an summoner, apply special rules
+        if (handleCopperGolemByEntity(event, attacker, sendMessages)) return true;
+
         Entity damageSource = event.damager();
 
         // Can't be hit, but for simplicity
@@ -753,6 +758,54 @@ public class EntityDamageHandler implements Listener
         {
             if (tameable.getTarget() == attacker) return true;
         }
+
+        event.setCancelled(true);
+        if (sendMessages)
+        {
+            String ownerName = GriefPrevention.lookupPlayerName(owner);
+            String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+            if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+            GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+        }
+        return true;
+    }
+
+    /**
+     * Handle damage to a {@link CopperGolem} by a {@link Player}.
+     *
+     * @param event the {@link EntityDamageInstance}
+     * @param attacker the attacking {@link Player}, if any
+     * @param sendMessages whether to send denial messages to users involved
+     * @return true if the damage is handled
+     */
+    private boolean handleCopperGolemByEntity(
+            @NotNull EntityDamageInstance event,
+            @Nullable Player attacker,
+            boolean sendMessages)
+    {
+        if (!(event.damaged() instanceof CopperGolem golem) || golem.getSummoner() == null)
+        {
+            // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
+            return false;
+        }
+
+        UUID owner = golem.getSummoner();
+        if (owner == null)
+        {
+            // Treat invalid state of tamed with no owner identically to untamed.
+            return false;
+        }
+
+        //limit attacks by players to owners and admins in ignore claims mode
+        if (attacker == null) return false;
+
+        //if the player interacting is the owner, always allow
+        if (attacker.getUniqueId().equals(owner)) return true;
+
+        //allow for admin override
+        PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+        if (attackerData.ignoreClaims) return true;
 
         event.setCancelled(true);
         if (sendMessages)

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -42,7 +43,7 @@ public final class ServerMocks
                 Keyed keyed = mock(arg);
                 doReturn(key).when(keyed).getKey();
                 return keyed;
-            }).when(registry).get(notNull());
+            }).when(registry).get(any(NamespacedKey.class));
             return registry;
         }).when(mock).getRegistry(notNull());
 
