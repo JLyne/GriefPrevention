@@ -12,6 +12,11 @@
       <option name="url" value="https://hub.spigotmc.org/nexus/content/repositories/snapshots/" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="purpur-repo" />
+      <option name="name" value="purpur-repo" />
+      <option name="url" value="https://repo.purpurmc.org/snapshots/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="essx-repo" />
       <option name="name" value="essx-repo" />
       <option name="url" value="https://ci.ender.zone/plugin/repository/everything/" />

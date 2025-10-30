@@ -38,8 +38,8 @@
 
     <repositories>
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>purpur-repo</id>
+            <url>https://repo.purpurmc.org/snapshots/</url>
         </repository>
     </repositories>
 
@@ -163,9 +163,9 @@
     <dependencies>
         <!-- Bukkit API. Bukkit has never ever deployed a release version -->
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
             <version>1.21-R0.1-SNAPSHOT</version>
+            <groupId>org.purpurmc.purpur</groupId>
+            <artifactId>purpur-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <!-- Annotations for nullity and other behaviors -->
