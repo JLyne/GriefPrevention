@@ -166,7 +166,6 @@ public enum Messages
     CreateClaimFailOverlapRegion("You can't claim all of this because you're not allowed to build here."),
     ResizeFailOverlapRegion("You don't have permission to build there, so you can't claim that area."),
     ShowNearbyClaims("Found {0} land claims.", "0: Number of claims found."),
-    NoChatUntilMove("Sorry, but you have to move a little more before you can chat.  We get lots of spam bots here.  :)"),
     SetClaimBlocksSuccess("Updated accrued claim blocks."),
     IgnoreConfirmation("You're now ignoring chat messages from that player."),
     UnIgnoreConfirmation("You're no longer ignoring chat messages from that player."),

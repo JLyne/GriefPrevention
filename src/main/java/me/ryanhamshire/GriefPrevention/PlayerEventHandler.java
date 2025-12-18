@@ -75,8 +75,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
@@ -128,8 +126,6 @@ class PlayerEventHandler implements Listener
     private MonitoredCommands chatCommands;
     private MonitoredCommands whisperCommands;
 
-    //spam tracker
-    SpamDetector spamDetector = new SpamDetector();
     // Definitions for specific material groups that do not have a tag
     private final Set<Material> spawnEggs;
     private final Set<Material> dyes;
@@ -165,7 +161,6 @@ class PlayerEventHandler implements Listener
         this.bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
         this.pvpBlockedCommands = new MonitoredCommands(instance.config_pvp_blockedCommands);
         this.accessTrustCommands = new MonitoredCommands(instance.config_claims_commandsRequiringAccessTrust);
-        this.chatCommands = new MonitoredCommands(instance.config_spam_monitorSlashCommands);
         this.whisperCommands = new MonitoredCommands(instance.config_eavesdrop_whisperCommands);
     }
 
@@ -335,87 +330,6 @@ class PlayerEventHandler implements Listener
             }
         }
 
-        //FEATURE: monitor for chat and command spam
-
-        if (!instance.config_spam_enabled) return false;
-
-        //if the player has permission to spam, don't bother even examining the message
-        if (player.hasPermission("griefprevention.spam")) return false;
-
-        //examine recent messages to detect spam
-        SpamAnalysisResult result = this.spamDetector.AnalyzeMessage(player.getUniqueId(), message, System.currentTimeMillis());
-
-        //apply any needed changes to message (like lowercasing all-caps)
-        if (event instanceof AsyncPlayerChatEvent)
-        {
-            ((AsyncPlayerChatEvent) event).setMessage(result.finalMessage);
-        }
-
-        //don't allow new players to chat after logging in until they move
-        PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-        if (playerData.noChatLocation != null)
-        {
-            Location currentLocation = player.getLocation();
-            if (currentLocation.getBlockX() == playerData.noChatLocation.getBlockX() &&
-                    currentLocation.getBlockZ() == playerData.noChatLocation.getBlockZ())
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoChatUntilMove, 10L);
-                result.muteReason = "pre-movement chat";
-            }
-            else
-            {
-                playerData.noChatLocation = null;
-            }
-        }
-
-        //filter IP addresses
-        if (result.muteReason == null)
-        {
-            if (instance.containsBlockedIP(message))
-            {
-                //block message
-                result.muteReason = "IP address";
-            }
-        }
-
-        //take action based on spam detector results
-        if (result.shouldBanChatter)
-        {
-            if (instance.config_spam_banOffenders)
-            {
-                //log entry
-                GriefPrevention.AddLogEntry("Banning " + player.getName() + " for spam.", CustomLogEntryTypes.AdminActivity);
-
-                //kick and ban
-                PlayerKickBanTask task = new PlayerKickBanTask(player, instance.config_spam_banMessage, "GriefPrevention Anti-Spam", true);
-                instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 1L);
-            }
-            else
-            {
-                //log entry
-                GriefPrevention.AddLogEntry("Kicking " + player.getName() + " for spam.", CustomLogEntryTypes.AdminActivity);
-
-                //just kick
-                PlayerKickBanTask task = new PlayerKickBanTask(player, "", "GriefPrevention Anti-Spam", false);
-                instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 1L);
-            }
-        }
-        else if (result.shouldWarnChatter)
-        {
-            //warn and log
-            GriefPrevention.sendMessage(player, TextMode.Warn, instance.config_spam_warningMessage, 10L);
-            GriefPrevention.AddLogEntry("Warned " + player.getName() + " about spam penalties.", CustomLogEntryTypes.Debug, true);
-        }
-
-        if (result.muteReason != null)
-        {
-            //mute and log
-            GriefPrevention.AddLogEntry("Muted " + result.muteReason + ".");
-            GriefPrevention.AddLogEntry("Muted " + player.getName() + " " + result.muteReason + ":" + message, CustomLogEntryTypes.Debug, true);
-
-            return true;
-        }
-
         return false;
     }
 
@@ -509,12 +423,6 @@ class PlayerEventHandler implements Listener
         boolean isMonitoredCommand = (category == CommandCategory.Chat || category == CommandCategory.Whisper);
         if (isMonitoredCommand)
         {
-            //if anti spam enabled, check for spam
-            if (instance.config_spam_enabled)
-            {
-                event.setCancelled(this.handlePlayerChat(event.getPlayer(), event.getMessage(), event));
-            }
-
             if (!player.hasPermission("griefprevention.spam") && this.bannedWordFinder.hasMatch(event.getMessage()))
             {
                 event.setCancelled(true);
@@ -564,55 +472,6 @@ class PlayerEventHandler implements Listener
         GriefPrevention.AddLogEntry(entryBuilder.toString(), CustomLogEntryTypes.SocialActivity, true);
     }
 
-    private final ConcurrentHashMap<UUID, Date> lastLoginThisServerSessionMap = new ConcurrentHashMap<>();
-
-    //when a player attempts to join the server...
-    @EventHandler(priority = EventPriority.HIGHEST)
-    void onPlayerLogin(PlayerLoginEvent event)
-    {
-        Player player = event.getPlayer();
-
-        //all this is anti-spam code
-        if (instance.config_spam_enabled)
-        {
-            //FEATURE: login cooldown to prevent login/logout spam with custom clients
-            long now = Calendar.getInstance().getTimeInMillis();
-
-            //if allowed to join and login cooldown enabled
-            if (instance.config_spam_loginCooldownSeconds > 0 && event.getResult() == Result.ALLOWED && !player.hasPermission("griefprevention.spam"))
-            {
-                //determine how long since last login and cooldown remaining
-                Date lastLoginThisSession = lastLoginThisServerSessionMap.get(player.getUniqueId());
-                if (lastLoginThisSession != null)
-                {
-                    long millisecondsSinceLastLogin = now - lastLoginThisSession.getTime();
-                    long secondsSinceLastLogin = millisecondsSinceLastLogin / 1000;
-                    long cooldownRemaining = instance.config_spam_loginCooldownSeconds - secondsSinceLastLogin;
-
-                    //if cooldown remaining
-                    if (cooldownRemaining > 0)
-                    {
-                        //DAS BOOT!
-                        event.setResult(Result.KICK_OTHER);
-                        event.setKickMessage("You must wait " + cooldownRemaining + " seconds before logging-in again.");
-                        event.disallow(event.getResult(), event.getKickMessage());
-                        return;
-                    }
-                }
-            }
-
-            //if logging-in account is banned, remember IP address for later
-            if (instance.config_smartBan && event.getResult() == Result.KICK_BANNED)
-            {
-                this.tempBannedIps.add(new IpBanInfo(event.getAddress(), now + this.MILLISECONDS_IN_DAY, player.getName()));
-            }
-        }
-
-        //remember the player's ip address
-        PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-        playerData.ipAddress = event.getAddress();
-    }
-
     //when a player successfully joins the server...
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
@@ -626,13 +485,6 @@ class PlayerEventHandler implements Listener
         long now = nowDate.getTime();
         PlayerData playerData = this.dataStore.getPlayerData(playerID);
         playerData.lastSpawn = now;
-        this.lastLoginThisServerSessionMap.put(playerID, nowDate);
-
-        //if newish, prevent chat until he's moved a bit to prove he's not a bot
-        if (GriefPrevention.isNewToServer(player) && !player.hasPermission("griefprevention.premovementchat"))
-        {
-            playerData.noChatLocation = player.getLocation();
-        }
 
         //if player has never played on the server before...
         if (!player.hasPlayedBefore())
