@@ -211,8 +211,7 @@ public enum Messages
     TooMuchIpOverlap("Sorry, there are too many players logged in with your IP address."),
     StandInSubclaim("You need to be standing in a subclaim to restrict it"),
     SubclaimRestricted("This subclaim's permissions will no longer inherit from the parent claim"),
-    SubclaimUnrestricted("This subclaim's permissions will now inherit from the parent claim"),
-    NetherPortalTrapDetectionMessage("It seems you might be stuck inside a nether portal. We will rescue you in a few seconds if that is the case!", "Sent to player on join, if they left while inside a nether portal.");
+    SubclaimUnrestricted("This subclaim's permissions will now inherit from the parent claim");
 
     final @NotNull String defaultValue;
     final @Nullable String notes;

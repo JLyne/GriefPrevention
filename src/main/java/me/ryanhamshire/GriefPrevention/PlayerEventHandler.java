@@ -77,7 +77,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
-import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
@@ -88,7 +87,6 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.profile.PlayerProfile;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
 import org.jetbrains.annotations.NotNull;
 
@@ -763,30 +761,6 @@ class PlayerEventHandler implements Listener
         //create a thread to load ignore information
         new IgnoreLoaderThread(playerID, playerData.ignoredPlayers).start();
 
-        //is he stuck in a portal frame?
-        if (player.hasMetadata("GP_PORTALRESCUE"))
-        {
-            //If so, let him know and rescue him in 10 seconds. If he is in fact not trapped, hopefully chunks will have loaded by this time so he can walk out.
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.NetherPortalTrapDetectionMessage, 20L);
-            new BukkitRunnable()
-            {
-                @Override
-                public void run()
-                {
-                    if (player.getPortalCooldown() > 8 && player.hasMetadata("GP_PORTALRESCUE"))
-                    {
-                        GriefPrevention.AddLogEntry("Rescued " + player.getName() + " from a nether portal.\nTeleported from " + GriefPrevention.getfriendlyLocationString(player.getLocation()) + " to " + GriefPrevention.getfriendlyLocationString((Location) player.getMetadata("GP_PORTALRESCUE").get(0).value()), CustomLogEntryTypes.Debug);
-                        player.teleport((Location) player.getMetadata("GP_PORTALRESCUE").get(0).value());
-                        player.removeMetadata("GP_PORTALRESCUE", instance);
-                    }
-                }
-            }.runTaskLater(instance, 200L);
-        }
-        //Otherwise just reset cooldown, just in case they happened to logout again...
-        else
-            player.setPortalCooldown(0);
-
-
         //if we're holding a logout message for this player, don't send that or this event's join message
         if (instance.config_spam_logoutMessageDelaySeconds > 0)
         {
@@ -866,13 +840,6 @@ class PlayerEventHandler implements Listener
         UUID playerID = player.getUniqueId();
         PlayerData playerData = this.dataStore.getPlayerData(playerID);
         boolean isBanned;
-
-        //If player is not trapped in a portal and has a pending rescue task, remove the associated metadata
-        //Why 9? No idea why, but this is decremented by 1 when the player disconnects.
-        if (player.getPortalCooldown() < 9)
-        {
-            player.removeMetadata("GP_PORTALRESCUE", instance);
-        }
 
         if (playerData.wasKicked)
         {
@@ -985,24 +952,6 @@ class PlayerEventHandler implements Listener
         {
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoDrop);
             event.setCancelled(true);
-        }
-    }
-
-    //when a player teleports via a portal
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    void onPlayerPortal(PlayerPortalEvent event)
-    {
-        //if the player isn't going anywhere, take no action
-        if (event.getTo() == null || event.getTo().getWorld() == null) return;
-
-        Player player = event.getPlayer();
-        if (event.getCause() == TeleportCause.NETHER_PORTAL)
-        {
-            //FEATURE: when players get trapped in a nether portal, send them back through to the other side
-            instance.startRescueTask(player, player.getLocation());
-
-            //don't track in worlds where claims are not enabled
-            if (!instance.claimsEnabledForWorld(event.getTo().getWorld())) return;
         }
     }
 
