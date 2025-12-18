@@ -21,7 +21,6 @@ package me.ryanhamshire.GriefPrevention;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.griefprevention.commands.ClaimCommand;
-import com.griefprevention.metrics.MetricsHandler;
 import com.griefprevention.protection.InteractionProtectionHandler;
 import com.griefprevention.protection.ProtectionHelper;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -368,12 +367,6 @@ public class GriefPrevention extends JavaPlugin
         setUpCommands();
 
         AddLogEntry("Boot finished.");
-
-        try
-        {
-            new MetricsHandler(this);
-        }
-        catch (Throwable ignored) {}
     }
 
     private void loadConfig()
