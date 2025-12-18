@@ -211,7 +211,6 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_logs_suspiciousEnabled;
     public boolean config_logs_adminEnabled;
     public boolean config_logs_debugEnabled;
-    public boolean config_logs_mutedChatEnabled;
 
     private String databaseUrl;
     private String databaseUserName;
@@ -669,7 +668,6 @@ public class GriefPrevention extends JavaPlugin
         this.config_logs_suspiciousEnabled = config.getBoolean("GriefPrevention.Abridged Logs.Included Entry Types.Suspicious Activity", true);
         this.config_logs_adminEnabled = config.getBoolean("GriefPrevention.Abridged Logs.Included Entry Types.Administrative Activity", false);
         this.config_logs_debugEnabled = config.getBoolean("GriefPrevention.Abridged Logs.Included Entry Types.Debug", false);
-        this.config_logs_mutedChatEnabled = config.getBoolean("GriefPrevention.Abridged Logs.Included Entry Types.Muted Chat Messages", false);
 
         //claims mode by world
         for (World world : this.config_claims_worldModes.keySet())
@@ -780,7 +778,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Suspicious Activity", this.config_logs_suspiciousEnabled);
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Administrative Activity", this.config_logs_adminEnabled);
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Debug", this.config_logs_debugEnabled);
-        outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Muted Chat Messages", this.config_logs_mutedChatEnabled);
         outConfig.set("GriefPrevention.ConfigVersion", 1);
 
         try
@@ -2037,40 +2034,6 @@ public class GriefPrevention extends JavaPlugin
             //create a task to rescue this player in a little while
             PlayerRescueTask task = new PlayerRescueTask(player, player.getLocation(), event.getDestination());
             this.getServer().getScheduler().scheduleSyncDelayedTask(this, task, 200L);  //20L ~ 1 second
-
-            return true;
-        }
-
-        else if (cmd.getName().equalsIgnoreCase("softmute"))
-        {
-            //requires one parameter
-            if (args.length != 1) return false;
-
-            //find the specified player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-            if (targetPlayer == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
-                return true;
-            }
-
-            //toggle mute for player
-            boolean isMuted = this.dataStore.toggleSoftMute(targetPlayer.getUniqueId());
-            if (isMuted)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.SoftMuted, targetPlayer.getName());
-                String executorName = "console";
-                if (player != null)
-                {
-                    executorName = player.getName();
-                }
-
-                GriefPrevention.AddLogEntry(executorName + " muted " + targetPlayer.getName() + ".", CustomLogEntryTypes.AdminActivity, true);
-            }
-            else
-            {
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.UnSoftMuted, targetPlayer.getName());
-            }
 
             return true;
         }

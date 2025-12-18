@@ -162,49 +162,13 @@ class PlayerEventHandler implements Listener
         }
 
         String message = event.getMessage();
+        this.handlePlayerChat(player, message, event);
 
-        boolean muted = this.handlePlayerChat(player, message, event);
-        Set<Player> recipients = event.getRecipients();
-
-        //muted messages go out to only the sender
-        if (muted)
-        {
-            recipients.clear();
-            recipients.add(player);
-        }
-
-        //soft muted messages go out to all soft muted players
-        else if (this.dataStore.isSoftMuted(player.getUniqueId()))
-        {
-            String notificationMessage = "(Muted " + player.getName() + "): " + message;
-            Set<Player> recipientsToKeep = new HashSet<>();
-            for (Player recipient : recipients)
-            {
-                if (this.dataStore.isSoftMuted(recipient.getUniqueId()))
-                {
-                    recipientsToKeep.add(recipient);
-                }
-                else if (recipient.hasPermission("griefprevention.eavesdrop"))
-                {
-                    recipient.sendMessage(ChatColor.GRAY + notificationMessage);
-                }
-            }
-            recipients.clear();
-            recipients.addAll(recipientsToKeep);
-
-            GriefPrevention.AddLogEntry(notificationMessage, CustomLogEntryTypes.MutedChat, false);
-        }
-
-        //remaining messages
-        else
-        {
-            //enter in abridged chat logs
-            makeSocialLogEntry(player.getName(), message);
-        }
+        //enter in abridged chat logs
+        makeSocialLogEntry(player.getName(), message);
     }
 
-    //returns true if the message should be muted, true if it should be sent
-    private boolean handlePlayerChat(Player player, String message, PlayerEvent event)
+    private void handlePlayerChat(Player player, String message, PlayerEvent event)
     {
         //FEATURE: automatically educate players about claiming land
         //watching for message format how*claim*, and will send a link to the basics video
@@ -249,8 +213,6 @@ class PlayerEventHandler implements Listener
                 }
             }
         }
-
-        return false;
     }
 
     //when a player uses a slash command...
@@ -270,13 +232,6 @@ class PlayerEventHandler implements Listener
             //determine target player, might be NULL
 
             Player targetPlayer = instance.getServer().getPlayer(command.getArgument(0));
-
-            //softmute feature
-            if (this.dataStore.isSoftMuted(player.getUniqueId()) && targetPlayer != null && !this.dataStore.isSoftMuted(targetPlayer.getUniqueId()))
-            {
-                event.setCancelled(true);
-                return;
-            }
 
             //if eavesdrop enabled and sender doesn't have the eavesdrop immunity permission, eavesdrop
             if (instance.config_whisperNotifications && !player.hasPermission("griefprevention.eavesdropimmune"))
@@ -308,13 +263,6 @@ class PlayerEventHandler implements Listener
         {
             event.setCancelled(true);
             GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, Messages.CommandBannedInPvP);
-            return;
-        }
-
-        //soft mute for chat slash commands
-        if (category == CommandCategory.Chat && this.dataStore.isSoftMuted(player.getUniqueId()))
-        {
-            event.setCancelled(true);
             return;
         }
 

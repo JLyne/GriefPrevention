@@ -134,8 +134,6 @@ public enum Messages
     ClaimExplosivesAdvertisement("To allow explosives to destroy blocks in this land claim, use /claimexplosions."),
     PlayerInPvPSafeZone("That player is in a PvP safe zone."),
     NoPistonsOutsideClaims("Warning: Pistons won't move blocks outside land claims."),
-    SoftMuted("Soft-muted {0}.", "0: The changed player's name."),
-    UnSoftMuted("Un-soft-muted {0}.", "0: The changed player's name."),
     DropUnlockAdvertisement("Other players can't pick up your dropped items unless you /unlockdrops first."),
     PickupBlockedExplanation("You can't pick this up unless {0} uses /unlockdrops.", "0: The item stack's owner."),
     DropUnlockConfirmation("Unlocked your drops.  Other players may now pick them up (until you die again)."),
