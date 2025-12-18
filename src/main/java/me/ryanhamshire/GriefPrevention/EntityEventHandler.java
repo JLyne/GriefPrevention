@@ -252,7 +252,7 @@ public class EntityEventHandler implements Listener
         // Remove entity so it doesn't continuously spawn drops.
         fallingBlock.remove();
 
-        ItemStack itemStack = new ItemStack(fallingBlock.getBlockData().getMaterial(), 1);
+        ItemStack itemStack = ItemStack.of(fallingBlock.getBlockData().getMaterial(), 1);
         block.getWorld().dropItemNaturally(fallingBlock.getLocation(), itemStack);
     }
 

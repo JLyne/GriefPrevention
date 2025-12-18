@@ -2905,7 +2905,7 @@ public class GriefPrevention extends JavaPlugin
         ItemStack placed;
         if (material.isItem())
         {
-            placed = new ItemStack(material);
+            placed = ItemStack.of(material);
         }
         else
         {
@@ -2916,7 +2916,7 @@ public class GriefPrevention extends JavaPlugin
             }
             else
             {
-                placed = new ItemStack(Material.DIRT);
+                placed = ItemStack.of(Material.DIRT);
             }
         }
 

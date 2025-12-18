@@ -719,7 +719,7 @@ public class BlockEventHandler implements Listener
                 }
                 pistonBlock.getWorld().dropItem(
                         pistonBlock.getLocation(),
-                        new ItemStack(event.isSticky() ? Material.STICKY_PISTON : Material.PISTON));
+                        ItemStack.of(event.isSticky() ? Material.STICKY_PISTON : Material.PISTON));
                 pistonBlock.setType(Material.AIR);
                 return true;
             }

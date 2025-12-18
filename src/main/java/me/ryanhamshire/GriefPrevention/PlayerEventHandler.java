@@ -23,6 +23,7 @@ import com.griefprevention.util.command.MonitorableCommand;
 import com.griefprevention.util.command.MonitoredCommands;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
+import io.papermc.paper.event.player.PlayerOpenSignEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.BanList;
@@ -79,7 +80,6 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -1014,7 +1014,7 @@ class PlayerEventHandler implements Listener
         if(!instance.config_claims_enderPearlsRequireAccessTrust) return;
 
         TeleportCause cause = event.getCause();
-        if(cause != TeleportCause.CHORUS_FRUIT && cause != TeleportCause.ENDER_PEARL) return;
+        if(cause != TeleportCause.CONSUMABLE_EFFECT && cause != TeleportCause.ENDER_PEARL) return;
 
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
@@ -1495,9 +1495,9 @@ class PlayerEventHandler implements Listener
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    void onPlayerSignOpen(@NotNull PlayerSignOpenEvent event)
+    void onPlayerSignOpen(@NotNull PlayerOpenSignEvent event)
     {
-        if (event.getCause() != PlayerSignOpenEvent.Cause.INTERACT || event.getSign().getBlock().getType() != event.getSign().getType())
+        if (event.getCause() != PlayerOpenSignEvent.Cause.INTERACT || event.getSign().getBlock().getType() != event.getSign().getType())
         {
             // If the sign is not opened by interaction or the corresponding block is no longer a sign,
             // it is either the initial sign placement or another plugin is at work. Do not interfere.

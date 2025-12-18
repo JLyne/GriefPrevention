@@ -66,7 +66,7 @@ public class WelcomeTask implements Runnable
 
             meta.setPages(page1.toString(), page2.toString());
 
-            ItemStack item = new ItemStack(Material.WRITTEN_BOOK);
+            ItemStack item = ItemStack.of(Material.WRITTEN_BOOK);
             item.setItemMeta(meta);
             player.getInventory().addItem(item);
         }
