@@ -86,7 +86,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockIterator;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -452,41 +451,6 @@ class PlayerEventHandler implements Listener
 
         //in case player has changed his name, on successful login, update UUID > Name mapping
         GriefPrevention.cacheUUIDNamePair(player.getUniqueId(), player.getName());
-
-        //ensure we're not over the limit for this IP address
-        InetAddress ipAddress = playerData.ipAddress;
-        if (ipAddress != null)
-        {
-            int ipLimit = instance.config_ipLimit;
-            if (ipLimit > 0 && GriefPrevention.isNewToServer(player))
-            {
-                int ipCount = 0;
-
-                @SuppressWarnings("unchecked")
-                Collection<Player> players = (Collection<Player>) instance.getServer().getOnlinePlayers();
-                for (Player onlinePlayer : players)
-                {
-                    if (onlinePlayer.getUniqueId().equals(player.getUniqueId())) continue;
-
-                    PlayerData otherData = instance.dataStore.getPlayerData(onlinePlayer.getUniqueId());
-                    if (ipAddress.equals(otherData.ipAddress) && GriefPrevention.isNewToServer(onlinePlayer))
-                    {
-                        ipCount++;
-                    }
-                }
-
-                if (ipCount >= ipLimit)
-                {
-                    //kick player
-                    PlayerKickBanTask task = new PlayerKickBanTask(player, instance.dataStore.getMessage(Messages.TooMuchIpOverlap), "GriefPrevention IP-sharing limit.", false);
-                    instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 100L);
-
-                    //silence join message
-                    event.setJoinMessage(null);
-                    return;
-                }
-            }
-        }
 
         //create a thread to load ignore information
         new IgnoreLoaderThread(playerID, playerData.ignoredPlayers).start();

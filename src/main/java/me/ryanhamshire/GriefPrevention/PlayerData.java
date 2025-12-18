@@ -24,7 +24,6 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.InetAddress;
 import java.util.Calendar;
 import java.util.UUID;
 import java.util.Vector;
@@ -96,8 +95,6 @@ public class PlayerData
 
     //safety confirmation for deleting multi-subdivision claims
     public boolean warnedAboutMajorDeletion = false;
-
-    public InetAddress ipAddress;
 
     //for addons to set per-player claim limits. Any negative value will use config's value
     private int AccruedClaimBlocksLimit = -1;

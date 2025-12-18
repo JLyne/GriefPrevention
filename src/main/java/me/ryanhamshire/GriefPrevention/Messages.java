@@ -206,7 +206,6 @@ public enum Messages
     IsIgnoringYou("That player is ignoring you."),
     ConsoleOnlyCommand("That command may only be executed from the server console."),
     WorldNotFound("World not found."),
-    TooMuchIpOverlap("Sorry, there are too many players logged in with your IP address."),
     StandInSubclaim("You need to be standing in a subclaim to restrict it"),
     SubclaimRestricted("This subclaim's permissions will no longer inherit from the parent claim"),
     SubclaimUnrestricted("This subclaim's permissions will now inherit from the parent claim");

@@ -196,9 +196,7 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_creaturesTrampleCrops;                    //whether or not non-player entities may trample crops
     public boolean config_rabbitsEatCrops;                          //whether or not rabbits may eat crops
     public boolean config_zombiesBreakDoors;                        //whether or not hard-mode zombies may break down wooden doors
-    public boolean config_mobProjectilesChangeBlocks;               //whether mob projectiles can change blocks (skeleton arrows lighting TNT or drowned tridents dropping pointed dripstone)
-
-    public int config_ipLimit;                                      //how many players can share an IP address
+    public boolean config_mobProjectilesChangeBlocks;               //whether mob projectiles can change blocks (skeleton arrows lighting TNT or drowned tridents dropping pointed dripstone)     //how many players can share an IP address
 
     public boolean config_silenceBans;                              //whether to remove quit messages on banned players
 
@@ -637,7 +635,6 @@ public class GriefPrevention extends JavaPlugin
         String whisperCommandsToMonitor = config.getString("GriefPrevention.WhisperCommands", "/tell;/pm;/r;/whisper;/msg");
 
         this.config_visualizationAntiCheatCompat = config.getBoolean("GriefPrevention.VisualizationAntiCheatCompatMode", false);
-        this.config_ipLimit = config.getInt("GriefPrevention.MaxPlayersPerIpAddress", 3);
         this.config_silenceBans = config.getBoolean("GriefPrevention.SilenceBans", true);
 
         this.config_endermenMoveBlocks = config.getBoolean("GriefPrevention.EndermenMoveBlocks", false);
@@ -792,7 +789,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.AdminsGetSignNotifications", this.config_signNotifications);
 
         outConfig.set("GriefPrevention.VisualizationAntiCheatCompatMode", this.config_visualizationAntiCheatCompat);
-        outConfig.set("GriefPrevention.MaxPlayersPerIpAddress", this.config_ipLimit);
         outConfig.set("GriefPrevention.SilenceBans", this.config_silenceBans);
 
         outConfig.set("GriefPrevention.EndermenMoveBlocks", this.config_endermenMoveBlocks);
