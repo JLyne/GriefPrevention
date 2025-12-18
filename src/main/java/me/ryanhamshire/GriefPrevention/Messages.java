@@ -203,7 +203,6 @@ public enum Messages
     BookTools("Our claim tools are {0} and {1}.", "0: claim modification tool name; 1:claim information tool name"),
     BookDisabledChestClaims("  On this server, placing a chest will NOT claim land for you."),
     BookUsefulCommands("Useful Commands:"),
-    NoProfanity("Please moderate your language."),
     IsIgnoringYou("That player is ignoring you."),
     ConsoleOnlyCommand("That command may only be executed from the server console."),
     WorldNotFound("World not found."),

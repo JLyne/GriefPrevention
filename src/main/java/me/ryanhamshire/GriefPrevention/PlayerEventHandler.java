@@ -26,7 +26,6 @@ import com.griefprevention.visualization.VisualizationType;
 import io.papermc.paper.event.player.PlayerOpenSignEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
-import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -84,7 +83,6 @@ import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.util.BlockIterator;
 import org.jetbrains.annotations.NotNull;
 
@@ -113,8 +111,6 @@ class PlayerEventHandler implements Listener
     //regex pattern for the "how do i claim land?" scanner
     private Pattern howToClaimPattern = null;
 
-    //matcher for banned words
-    private WordFinder bannedWordFinder;
     private MonitoredCommands pvpBlockedCommands;
     private MonitoredCommands accessTrustCommands;
     private MonitoredCommands chatCommands;
@@ -130,7 +126,6 @@ class PlayerEventHandler implements Listener
         this.dataStore = dataStore;
         this.instance = plugin;
         // Initialize empty on load so never null just in case. Reload after plugins enable.
-        this.bannedWordFinder = new WordFinder(List.of());
         this.pvpBlockedCommands = new MonitoredCommands(List.of());
         this.accessTrustCommands = new MonitoredCommands(List.of());
         this.chatCommands = new MonitoredCommands(List.of());
@@ -152,7 +147,6 @@ class PlayerEventHandler implements Listener
     protected void reload()
     {
         this.howToClaimPattern = null;
-        this.bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
         this.pvpBlockedCommands = new MonitoredCommands(instance.config_pvp_blockedCommands);
         this.accessTrustCommands = new MonitoredCommands(instance.config_claims_commandsRequiringAccessTrust);
         this.whisperCommands = new MonitoredCommands(instance.config_eavesdrop_whisperCommands);
@@ -201,45 +195,6 @@ class PlayerEventHandler implements Listener
             recipients.addAll(recipientsToKeep);
 
             GriefPrevention.AddLogEntry(notificationMessage, CustomLogEntryTypes.MutedChat, false);
-        }
-
-        //troll and excessive profanity filter
-        else if (!player.hasPermission("griefprevention.spam") && this.bannedWordFinder.hasMatch(message))
-        {
-            //allow admins to see the soft-muted text
-            String notificationMessage = "(Muted " + player.getName() + "): " + message;
-            for (Player recipient : recipients)
-            {
-                if (recipient.hasPermission("griefprevention.eavesdrop"))
-                {
-                    recipient.sendMessage(ChatColor.GRAY + notificationMessage);
-                }
-            }
-
-            //limit recipients to sender
-            recipients.clear();
-            recipients.add(player);
-
-            //if player not new warn for the first infraction per play session.
-            if (!GriefPrevention.isNewToServer(player))
-            {
-                PlayerData playerData = instance.dataStore.getPlayerData(player.getUniqueId());
-                if (!playerData.profanityWarned)
-                {
-                    playerData.profanityWarned = true;
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoProfanity);
-                    event.setCancelled(true);
-                    return;
-                }
-            }
-
-            //otherwise assume chat troll and mute all chat from this sender until an admin says otherwise
-            else if (instance.config_trollFilterEnabled)
-            {
-                GriefPrevention.AddLogEntry("Auto-muted new player " + player.getName() + " for profanity shortly after join.  Use /SoftMute to undo.", CustomLogEntryTypes.AdminActivity);
-                GriefPrevention.AddLogEntry(notificationMessage, CustomLogEntryTypes.MutedChat, false);
-                instance.dataStore.toggleSoftMute(player.getUniqueId());
-            }
         }
 
         //remaining messages
@@ -417,11 +372,6 @@ class PlayerEventHandler implements Listener
         boolean isMonitoredCommand = (category == CommandCategory.Chat || category == CommandCategory.Whisper);
         if (isMonitoredCommand)
         {
-            if (!player.hasPermission("griefprevention.spam") && this.bannedWordFinder.hasMatch(event.getMessage()))
-            {
-                event.setCancelled(true);
-            }
-
             //unless cancelled, log in abridged logs
             if (!event.isCancelled())
             {

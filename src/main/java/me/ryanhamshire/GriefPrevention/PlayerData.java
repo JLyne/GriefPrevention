@@ -122,9 +122,6 @@ public class PlayerData
     public ConcurrentHashMap<UUID, Boolean> ignoredPlayers = new ConcurrentHashMap<>();
     public boolean ignoreListChanged = false;
 
-    //profanity warning, once per play session
-    boolean profanityWarned = false;
-
     //whether or not this player is "in" pvp combat
     public boolean inPvpCombat()
     {

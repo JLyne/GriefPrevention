@@ -18,7 +18,6 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
@@ -91,7 +90,6 @@ public abstract class DataStore
     final static String configFilePath = dataLayerFolderPath + File.separator + "config.yml";
     final static String messagesFilePath = dataLayerFolderPath + File.separator + "messages.yml";
     final static String softMuteFilePath = dataLayerFolderPath + File.separator + "softMute.txt";
-    final static String bannedWordsFilePath = dataLayerFolderPath + File.separator + "bannedWords.txt";
 
     //the latest version of the data schema implemented here
     protected static final int latestSchemaVersion = 3;
@@ -240,31 +238,6 @@ public abstract class DataStore
                 if (inStream != null) inStream.close();
             }
             catch (IOException exception) {}
-        }
-    }
-
-    public List<String> loadBannedWords()
-    {
-        try
-        {
-            File bannedWordsFile = new File(bannedWordsFilePath);
-            if (!bannedWordsFile.exists())
-            {
-                Files.touch(bannedWordsFile);
-                String defaultWords =
-                        "nigger\nniggers\nniger\nnigga\nnigers\nniggas\n" +
-                                "fag\nfags\nfaggot\nfaggots\nfeggit\nfeggits\nfaggit\nfaggits\n" +
-                                "cunt\ncunts\nwhore\nwhores\nslut\nsluts\n";
-                Files.asCharSink(bannedWordsFile, StandardCharsets.UTF_8, FileWriteMode. APPEND).write(defaultWords);
-            }
-
-            return Files.readLines(bannedWordsFile, StandardCharsets.UTF_8);
-        }
-        catch (Exception e)
-        {
-            GriefPrevention.AddLogEntry("Failed to read from the banned words data file: " + e);
-            e.printStackTrace();
-            return new ArrayList<>();
         }
     }
 

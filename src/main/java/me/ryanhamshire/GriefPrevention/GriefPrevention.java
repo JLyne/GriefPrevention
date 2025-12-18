@@ -36,7 +36,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
@@ -201,7 +200,6 @@ public class GriefPrevention extends JavaPlugin
 
     public int config_ipLimit;                                      //how many players can share an IP address
 
-    public boolean config_trollFilterEnabled;                       //whether to auto-mute new players who use banned words right after joining
     public boolean config_silenceBans;                              //whether to remove quit messages on banned players
 
     public HashMap<String, Integer> config_seaLevelOverride;        //override for sea level, because bukkit doesn't report the right value for all situations
@@ -639,7 +637,6 @@ public class GriefPrevention extends JavaPlugin
         String whisperCommandsToMonitor = config.getString("GriefPrevention.WhisperCommands", "/tell;/pm;/r;/whisper;/msg");
 
         this.config_visualizationAntiCheatCompat = config.getBoolean("GriefPrevention.VisualizationAntiCheatCompatMode", false);
-        this.config_trollFilterEnabled = config.getBoolean("GriefPrevention.Mute New Players Using Banned Words", true);
         this.config_ipLimit = config.getInt("GriefPrevention.MaxPlayersPerIpAddress", 3);
         this.config_silenceBans = config.getBoolean("GriefPrevention.SilenceBans", true);
 
@@ -795,7 +792,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.AdminsGetSignNotifications", this.config_signNotifications);
 
         outConfig.set("GriefPrevention.VisualizationAntiCheatCompatMode", this.config_visualizationAntiCheatCompat);
-        outConfig.set("GriefPrevention.Mute New Players Using Banned Words", this.config_trollFilterEnabled);
         outConfig.set("GriefPrevention.MaxPlayersPerIpAddress", this.config_ipLimit);
         outConfig.set("GriefPrevention.SilenceBans", this.config_silenceBans);
 
@@ -2988,42 +2984,6 @@ public class GriefPrevention extends JavaPlugin
         Boolean configSetting = this.config_pvp_specifiedWorlds.get(world);
         if (configSetting != null) return configSetting;
         return world.getPVP();
-    }
-
-    public static boolean isNewToServer(Player player)
-    {
-        if (player.getStatistic(Statistic.PICKUP, Material.OAK_LOG) > 0 ||
-                player.getStatistic(Statistic.PICKUP, Material.SPRUCE_LOG) > 0 ||
-                player.getStatistic(Statistic.PICKUP, Material.BIRCH_LOG) > 0 ||
-                player.getStatistic(Statistic.PICKUP, Material.JUNGLE_LOG) > 0 ||
-                player.getStatistic(Statistic.PICKUP, Material.ACACIA_LOG) > 0 ||
-                player.getStatistic(Statistic.PICKUP, Material.DARK_OAK_LOG) > 0) return false;
-
-        PlayerData playerData = instance.dataStore.getPlayerData(player.getUniqueId());
-        if (!playerData.getClaims().isEmpty()) return false;
-
-        return true;
-    }
-
-    static void banPlayer(Player player, String reason, String source)
-    {
-        if (GriefPrevention.instance.config_ban_useCommand)
-        {
-            Bukkit.getServer().dispatchCommand(
-                    Bukkit.getConsoleSender(),
-                    GriefPrevention.instance.config_ban_commandFormat.replace("%name%", player.getName()).replace("%reason%", reason));
-        }
-        else
-        {
-            BanList<PlayerProfile> bans = Bukkit.getServer().getBanList(Type.PROFILE);
-            bans.addBan(player.getPlayerProfile(), reason, (Date) null, source);
-
-            //kick
-            if (player.isOnline())
-            {
-                player.kickPlayer(reason);
-            }
-        }
     }
 
     public ItemStack getItemInHand(Player player, EquipmentSlot hand)
