@@ -981,42 +981,7 @@ public abstract class DataStore
 
     public void asyncSavePlayerData(UUID playerID, PlayerData playerData)
     {
-        //save everything except the ignore list
         this.overrideSavePlayerData(playerID, playerData);
-
-        //save the ignore list
-        if (playerData.ignoreListChanged)
-        {
-            StringBuilder fileContent = new StringBuilder();
-            try
-            {
-                for (UUID uuidKey : playerData.ignoredPlayers.keySet())
-                {
-                    Boolean value = playerData.ignoredPlayers.get(uuidKey);
-                    if (value == null) continue;
-
-                    //admin-enforced ignores begin with an asterisk
-                    if (value)
-                    {
-                        fileContent.append("*");
-                    }
-
-                    fileContent.append(uuidKey);
-                    fileContent.append("\n");
-                }
-
-                //write data to file
-                File playerDataFile = new File(playerDataFolderPath + File.separator + playerID + ".ignore");
-                Files.write(fileContent.toString().trim().getBytes(StandardCharsets.UTF_8), playerDataFile);
-            }
-
-            //if any problem, log it
-            catch (Exception e)
-            {
-                GriefPrevention.AddLogEntry("GriefPrevention: Unexpected exception saving data for player \"" + playerID.toString() + "\": " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
     }
 
     abstract void overrideSavePlayerData(UUID playerID, PlayerData playerData);

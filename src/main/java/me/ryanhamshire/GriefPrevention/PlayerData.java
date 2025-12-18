@@ -27,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Calendar;
 import java.util.UUID;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
 
 //holds all of GriefPrevention's player-tied data
 public class PlayerData
@@ -110,11 +109,6 @@ public class PlayerData
 
     //timestamp for last warning when placing TNT on explosion protected claim
     Long explosivesWarningTimestamp = null;
-
-    //ignore list
-    //true means invisible (admin-forced ignore), false means player-created ignore
-    public ConcurrentHashMap<UUID, Boolean> ignoredPlayers = new ConcurrentHashMap<>();
-    public boolean ignoreListChanged = false;
 
     //whether or not this player is "in" pvp combat
     public boolean inPvpCombat()

@@ -200,33 +200,6 @@ class PlayerEventHandler implements Listener
         {
             //enter in abridged chat logs
             makeSocialLogEntry(player.getName(), message);
-
-            //based on ignore lists, remove some of the audience
-            if (!player.hasPermission("griefprevention.notignorable"))
-            {
-                Set<Player> recipientsToRemove = new HashSet<>();
-                PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                for (Player recipient : recipients)
-                {
-                    if (!recipient.hasPermission("griefprevention.notignorable"))
-                    {
-                        if (playerData.ignoredPlayers.containsKey(recipient.getUniqueId()))
-                        {
-                            recipientsToRemove.add(recipient);
-                        }
-                        else
-                        {
-                            PlayerData targetPlayerData = this.dataStore.getPlayerData(recipient.getUniqueId());
-                            if (targetPlayerData.ignoredPlayers.containsKey(player.getUniqueId()))
-                            {
-                                recipientsToRemove.add(recipient);
-                            }
-                        }
-                    }
-                }
-
-                recipients.removeAll(recipientsToRemove);
-            }
         }
     }
 
@@ -324,27 +297,6 @@ class PlayerEventHandler implements Listener
                             onlinePlayer.sendMessage(ChatColor.GRAY + logMessage);
                         }
                     }
-                }
-            }
-
-            //ignore feature
-            if (targetPlayer != null && targetPlayer.isOnline())
-            {
-                //if either is ignoring the other, cancel this command
-                playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                if (playerData.ignoredPlayers.containsKey(targetPlayer.getUniqueId()) && !targetPlayer.hasPermission("griefprevention.notignorable"))
-                {
-                    event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.IsIgnoringYou);
-                    return;
-                }
-
-                PlayerData targetPlayerData = this.dataStore.getPlayerData(targetPlayer.getUniqueId());
-                if (targetPlayerData.ignoredPlayers.containsKey(player.getUniqueId()) && !player.hasPermission("griefprevention.notignorable"))
-                {
-                    event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.IsIgnoringYou);
-                    return;
                 }
             }
         }
@@ -450,9 +402,6 @@ class PlayerEventHandler implements Listener
 
         //in case player has changed his name, on successful login, update UUID > Name mapping
         GriefPrevention.cacheUUIDNamePair(player.getUniqueId(), player.getName());
-
-        //create a thread to load ignore information
-        new IgnoreLoaderThread(playerID, playerData.ignoredPlayers).start();
 
         //if we're holding a logout message for this player, don't send that or this event's join message
         if (instance.config_spam_logoutMessageDelaySeconds > 0)
