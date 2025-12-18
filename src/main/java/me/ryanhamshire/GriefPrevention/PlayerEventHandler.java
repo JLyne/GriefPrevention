@@ -73,7 +73,6 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
@@ -515,15 +514,6 @@ class PlayerEventHandler implements Listener
         playerData.receivedDropUnlockAdvertisement = false;
     }
 
-    //when a player gets kicked...
-    @EventHandler(priority = EventPriority.HIGHEST)
-    void onPlayerKicked(PlayerKickEvent event)
-    {
-        Player player = event.getPlayer();
-        PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-        playerData.wasKicked = true;
-    }
-
     //when a player quits...
     private final HashMap<UUID, Integer> heldLogoutMessages = new HashMap<>();
 
@@ -533,26 +523,9 @@ class PlayerEventHandler implements Listener
         Player player = event.getPlayer();
         UUID playerID = player.getUniqueId();
         PlayerData playerData = this.dataStore.getPlayerData(playerID);
-        boolean isBanned;
-
-        if (playerData.wasKicked)
-        {
-            isBanned = player.isBanned();
-        }
-        else
-        {
-            isBanned = false;
-        }
-
 
         //silence notifications when they're coming too fast
         if (event.getQuitMessage() != null && this.shouldSilenceNotification())
-        {
-            event.setQuitMessage(null);
-        }
-
-        //silence notifications when the player is banned
-        if (isBanned && instance.config_silenceBans)
         {
             event.setQuitMessage(null);
         }

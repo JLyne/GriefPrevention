@@ -130,7 +130,6 @@ public enum Messages
     ClaimTooSmallForEntities("This claim isn't big enough for that.  Try enlarging it."),
     TooManyEntitiesInClaim("This claim has too many entities already.  Try enlarging the claim or removing some animals, monsters, paintings, or minecarts."),
     YouHaveNoClaims("You don't have any land claims."),
-    AutoBanNotify("Auto-banned {0}({1}).  See logs for details."),
     AdjustGroupBlocksSuccess("Adjusted bonus claim blocks for players with the {0} permission by {1}.  New total: {2}.", "0: permission; 1: adjustment amount; 2: new total bonus"),
     InvalidPermissionID("Please specify a player name, or a permission in [brackets]."),
     HowToClaimRegex("(^|.*\\W)how\\W.*\\W(claim|protect|lock)(\\W.*|$)", "This is a Java Regular Expression.  Look it up before editing!  It's used to tell players about the demo video when they ask how to claim land."),

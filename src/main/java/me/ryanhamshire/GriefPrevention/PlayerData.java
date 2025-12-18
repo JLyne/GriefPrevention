@@ -69,9 +69,6 @@ public class PlayerData
     //whether this player was recently warned about building outside land claims
     boolean warnedAboutBuildingOutsideClaims = false;
 
-    //whether the player was kicked (set and used during logout)
-    boolean wasKicked = false;
-
     //visualization
     private transient @Nullable BoundaryVisualization visibleBoundaries = null;
 

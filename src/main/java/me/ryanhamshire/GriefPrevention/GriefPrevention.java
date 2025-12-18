@@ -27,8 +27,6 @@ import com.griefprevention.protection.ProtectionHelper;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
-import org.bukkit.BanList;
-import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -52,7 +50,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.profile.PlayerProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -198,8 +195,6 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_zombiesBreakDoors;                        //whether or not hard-mode zombies may break down wooden doors
     public boolean config_mobProjectilesChangeBlocks;               //whether mob projectiles can change blocks (skeleton arrows lighting TNT or drowned tridents dropping pointed dripstone)     //how many players can share an IP address
 
-    public boolean config_silenceBans;                              //whether to remove quit messages on banned players
-
     public HashMap<String, Integer> config_seaLevelOverride;        //override for sea level, because bukkit doesn't report the right value for all situations
     public HashMap<String, Integer> config_claims_minYOverride;     //per-world override for minimum Y coordinate
 
@@ -218,10 +213,6 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_logs_adminEnabled;
     public boolean config_logs_debugEnabled;
     public boolean config_logs_mutedChatEnabled;
-
-    //ban management plugin interop settings
-    public boolean config_ban_useCommand;
-    public String config_ban_commandFormat;
 
     private String databaseUrl;
     private String databaseUserName;
@@ -635,7 +626,6 @@ public class GriefPrevention extends JavaPlugin
         String whisperCommandsToMonitor = config.getString("GriefPrevention.WhisperCommands", "/tell;/pm;/r;/whisper;/msg");
 
         this.config_visualizationAntiCheatCompat = config.getBoolean("GriefPrevention.VisualizationAntiCheatCompatMode", false);
-        this.config_silenceBans = config.getBoolean("GriefPrevention.SilenceBans", true);
 
         this.config_endermenMoveBlocks = config.getBoolean("GriefPrevention.EndermenMoveBlocks", false);
         this.config_silverfishBreakBlocks = config.getBoolean("GriefPrevention.SilverfishBreakBlocks", false);
@@ -643,8 +633,6 @@ public class GriefPrevention extends JavaPlugin
         this.config_rabbitsEatCrops = config.getBoolean("GriefPrevention.RabbitsEatCrops", true);
         this.config_zombiesBreakDoors = config.getBoolean("GriefPrevention.HardModeZombiesBreakDoors", false);
         this.config_mobProjectilesChangeBlocks = config.getBoolean("GriefPrevention.MobProjectilesChangeBlocks", false);
-        this.config_ban_useCommand = config.getBoolean("GriefPrevention.UseBanCommand", false);
-        this.config_ban_commandFormat = config.getString("GriefPrevention.BanCommandPattern", "ban %name% %reason%");
 
         //default for claim investigation tool
         String investigationToolMaterialName = Material.STICK.name();
@@ -789,7 +777,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.AdminsGetSignNotifications", this.config_signNotifications);
 
         outConfig.set("GriefPrevention.VisualizationAntiCheatCompatMode", this.config_visualizationAntiCheatCompat);
-        outConfig.set("GriefPrevention.SilenceBans", this.config_silenceBans);
 
         outConfig.set("GriefPrevention.EndermenMoveBlocks", this.config_endermenMoveBlocks);
         outConfig.set("GriefPrevention.SilverfishBreakBlocks", this.config_silverfishBreakBlocks);
@@ -797,9 +784,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.RabbitsEatCrops", this.config_rabbitsEatCrops);
         outConfig.set("GriefPrevention.HardModeZombiesBreakDoors", this.config_zombiesBreakDoors);
         outConfig.set("GriefPrevention.MobProjectilesChangeBlocks", this.config_mobProjectilesChangeBlocks);
-
-        outConfig.set("GriefPrevention.UseBanCommand", this.config_ban_useCommand);
-        outConfig.set("GriefPrevention.BanCommandPattern", this.config_ban_commandFormat);
 
         outConfig.set("GriefPrevention.Advanced.fixNegativeClaimblockAmounts", this.config_advanced_fixNegativeClaimblockAmounts);
         outConfig.set("GriefPrevention.Advanced.ClaimExpirationCheckRate", this.config_advanced_claim_expiration_check_rate);
