@@ -6,6 +6,7 @@ import org.bukkit.entity.Animals;
 import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.Donkey;
+import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.EvokerFangs;
@@ -15,7 +16,6 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mob;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -67,7 +67,6 @@ public class EntityDamageHandler implements Listener
             PotionEffectType.LEVITATION
     );
     private static final Set<EntityType> TEMPTABLE_SEMI_HOSTILES = Set.of(
-            EntityType.HOGLIN,
             EntityType.POLAR_BEAR,
             EntityType.PANDA
     );
@@ -183,12 +182,6 @@ public class EntityDamageHandler implements Listener
      */
     private boolean isHostile(@NotNull Entity entity)
     {
-        if (entity instanceof Monster) return true;
-
-        EntityType type = entity.getType();
-        if (type == EntityType.GHAST || type == EntityType.MAGMA_CUBE || type == EntityType.SHULKER)
-            return true;
-
         if (entity instanceof Slime slime)
         {
             // Size 0 "baby" slimes cannot deal damage and are often kept as pets.
@@ -197,6 +190,10 @@ public class EntityDamageHandler implements Listener
             // To make this protection less obnoxious, only protect baby slimes that have lived for a minute or more.
             return slime.getSize() > 0 || slime.getTicksLived() < 1200;
         }
+
+        if (entity instanceof Enemy) return true;
+
+        EntityType type = entity.getType();
 
         if (entity instanceof Rabbit rabbit)
             return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
