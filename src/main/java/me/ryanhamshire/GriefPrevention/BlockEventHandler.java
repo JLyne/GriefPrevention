@@ -226,14 +226,7 @@ public class BlockEventHandler implements Listener
 
     private boolean doesAllowFireProximityInWorld(World world)
     {
-        if (GriefPrevention.instance.pvpRulesApply(world))
-        {
-            return GriefPrevention.instance.config_pvp_allowFireNearPlayers;
-        }
-        else
-        {
-            return GriefPrevention.instance.config_pvp_allowFireNearPlayers_NonPvp;
-        }
+        return GriefPrevention.instance.config_allowFireNearPlayers;
     }
 
     //when a player places a block...
@@ -244,9 +237,9 @@ public class BlockEventHandler implements Listener
         Player player = placeEvent.getPlayer();
         Block block = placeEvent.getBlock();
 
-        //FEATURE: limit fire placement, to prevent PvP-by-fire
+        //FEATURE: limit fire placement
 
-        //if placed block is fire and pvp is off, apply rules for proximity to other players
+        //if placed block is fire apply rules for proximity to other players
         if (Tag.FIRE.isTagged(block.getType()) && !doesAllowFireProximityInWorld(block.getWorld()))
         {
             List<Player> players = block.getWorld().getPlayers();
