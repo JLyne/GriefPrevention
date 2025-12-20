@@ -21,6 +21,7 @@ package me.ryanhamshire.GriefPrevention;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.griefprevention.commands.ClaimCommand;
+import com.griefprevention.commands.TabCompletions;
 import com.griefprevention.protection.InteractionProtectionHandler;
 import com.griefprevention.protection.ProtectionHelper;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -1990,6 +1991,121 @@ public class GriefPrevention extends JavaPlugin
         }
 
         return false;
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String commandLabel, String[] args)
+    {
+
+        Player player = null;
+        if (sender instanceof Player)
+        {
+            player = (Player) sender;
+        }
+
+        //extendclaim
+        if (cmd.getName().equalsIgnoreCase("extendclaim") && player != null)
+        {
+            return TabCompletions.integer(args, 3, false);
+        }
+
+        //trust <player>
+        else if (cmd.getName().equalsIgnoreCase("trust") && player != null)
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        //transferclaim <player>
+        else if (cmd.getName().equalsIgnoreCase("transferclaim") && player != null)
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        //untrust <player> or untrust [<group>]
+        else if (cmd.getName().equalsIgnoreCase("untrust") && player != null)
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        //accesstrust <player>
+        else if (cmd.getName().equalsIgnoreCase("accesstrust") && player != null)
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        //containertrust <player>
+        else if (cmd.getName().equalsIgnoreCase("containertrust") && player != null)
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        //permissiontrust <player>
+        else if (cmd.getName().equalsIgnoreCase("permissiontrust") && player != null)
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("deleteclaimsinworld") && player == null)
+        {
+            // TODO: Worlds
+        }
+        else if (cmd.getName().equalsIgnoreCase("deleteuserclaimsinworld"))
+        {
+            // TODO: Worlds
+        }
+
+        //claimbook
+        else if (cmd.getName().equalsIgnoreCase("claimbook"))
+        {
+            return TabCompletions.visiblePlayers(sender, args);
+        }
+
+        //claimslist or claimslist <player>
+        else if (cmd.getName().equalsIgnoreCase("claimslist"))
+        {
+            if (player != null && !player.hasPermission("griefprevention.claimslistother"))
+            {
+                return TabCompletions.visiblePlayers(sender, args);
+            }
+        }
+
+        //unlockItems
+        else if (cmd.getName().equalsIgnoreCase("unlockdrops") && player != null)
+        {
+            if (player.hasPermission("griefprevention.unlockothersdrops") && args.length == 1)
+            {
+                return TabCompletions.visiblePlayers(sender, args);
+            }
+        }
+
+        //adjustbonusclaimblocks <player> <amount> or [<permission>] amount
+        else if (cmd.getName().equalsIgnoreCase("adjustbonusclaimblocks"))
+        {
+            //requires exactly two parameters, the other player's name and the new amount
+            if (args.length == 1) {
+                return TabCompletions.visiblePlayers(sender, args);
+            } else {
+                return TabCompletions.integer(args, 5, false);
+            }
+        }
+
+        //adjustbonusclaimblocksall <amount>
+        else if (cmd.getName().equalsIgnoreCase("adjustbonusclaimblocksall"))
+        {
+            return TabCompletions.integer(args, 5, false);
+        }
+
+        //setaccruedclaimblocks <player> <amount>
+        else if (cmd.getName().equalsIgnoreCase("setaccruedclaimblocks"))
+        {
+            //requires exactly two parameters, the other player's name and the new amount
+            if (args.length == 1) {
+                return TabCompletions.visiblePlayers(sender, args);
+            } else {
+                return TabCompletions.integer(args, 5, false);
+            }
+        }
+
+        return null;
     }
 
     private String trustEntryToPlayerName(String entry)
