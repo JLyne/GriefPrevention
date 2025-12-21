@@ -1,6 +1,5 @@
 package me.ryanhamshire.GriefPrevention;
 
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.CopperGolem;
@@ -36,10 +35,8 @@ import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeCategory;
@@ -66,37 +63,14 @@ public class EntityDamageHandler implements Listener
             PotionEffectType.JUMP_BOOST,
             PotionEffectType.LEVITATION
     );
-    private static final Set<EntityType> TEMPTABLE_SEMI_HOSTILES = Set.of(
-            EntityType.POLAR_BEAR,
-            EntityType.PANDA
-    );
 
     private final @NotNull DataStore dataStore;
     private final @NotNull GriefPrevention instance;
-    private final @NotNull NamespacedKey luredByPlayer;
 
     EntityDamageHandler(@NotNull DataStore dataStore, @NotNull GriefPrevention plugin)
     {
         this.dataStore = dataStore;
         instance = plugin;
-        luredByPlayer = new NamespacedKey(plugin, "lured_by_player");
-    }
-
-    // Tag passive animals that can become aggressive so that we can tell whether they are hostile later
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onEntityTarget(@NotNull EntityTargetEvent event)
-    {
-        if (!instance.claimsEnabledForWorld(event.getEntity().getWorld()))
-            return;
-
-        if (!TEMPTABLE_SEMI_HOSTILES.contains(event.getEntityType()))
-            return;
-
-        if (event.getReason() == EntityTargetEvent.TargetReason.TEMPT)
-            event.getEntity().getPersistentDataContainer().set(luredByPlayer, PersistentDataType.BYTE, (byte) 1);
-        else
-            event.getEntity().getPersistentDataContainer().remove(luredByPlayer);
-
     }
 
     //when an entity is damaged
@@ -115,8 +89,6 @@ public class EntityDamageHandler implements Listener
 
     private void handleEntityDamageEvent(@NotNull EntityDamageInstance event, boolean sendMessages)
     {
-        //monsters are never protected
-        if (isHostile(event.damaged())) return;
 
         //horse protections can be disabled
         if (event.damaged() instanceof Horse && !instance.config_claims_protectHorses) return;
@@ -135,17 +107,14 @@ public class EntityDamageHandler implements Listener
         // Handle environmental damage to tamed animals that could easily be caused maliciously.
         if (handlePetDamageByEnvironment(event)) return;
 
+        // Hostile mobs are not protected
+        if (isHostile(event.damaged(), event.damager())) return;
+
         // Handle entity damage by block explosions.
         if (handleEntityDamageByBlockExplosion(event)) return;
 
         //the rest is only interested in entities damaging entities (ignoring environmental damage)
         if (event.damager() == null) return;
-
-        if (event.damager() instanceof LightningStrike && event.damager().hasMetadata("GP_TRIDENT"))
-        {
-            event.setCancelled(true);
-            return;
-        }
 
         //determine which player is attacking, if any
         Player attacker = null;
@@ -175,33 +144,95 @@ public class EntityDamageHandler implements Listener
     }
 
     /**
-     * Check if an {@link Entity} is considered hostile.
+     * Check if an {@link Entity} is considered hostile to the {@link Entity} attempting to damage it.
      *
      * @param entity the {@code Entity}
      * @return true if the {@code Entity} is hostile
      */
-    private boolean isHostile(@NotNull Entity entity)
+    private boolean isHostile(@NotNull Entity entity, @Nullable Entity damager)
     {
-        if (entity instanceof Slime slime)
+        switch (entity)
         {
-            // Size 0 "baby" slimes cannot deal damage and are often kept as pets.
-            // This is really inconvenient for players who are trying to harvest slimeballs in areas with claims;
-            // the full-sized slimes are considered dangerous, but the ones that actually drop the slimeballs are not.
-            // To make this protection less obnoxious, only protect baby slimes that have lived for a minute or more.
-            return slime.getSize() > 0 || slime.getTicksLived() < 1200;
+            case Slime slime ->
+            {
+                // Size 0 "baby" slimes cannot deal damage and are often kept as pets.
+                // This is really inconvenient for players who are trying to harvest slimeballs in areas with claims;
+                // the full-sized slimes are considered dangerous, but the ones that actually drop the slimeballs are not.
+                // To make this protection less obnoxious, only protect baby slimes that have lived for a minute or more.
+                return slime.getSize() > 0 || slime.getTicksLived() < 1200;
+            }
+            case Enemy _ ->
+            {
+                return true;
+            }
+            case Rabbit rabbit ->
+            {
+                return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
+            }
+
+            // Consider hostile if mob or its controlling passenger:
+            // - Are targeting the damager or a player
+            // - Are targeting the owner of the damager (if they are a pet)
+            // - Are targeting a pet of the damager
+            case Mob mob when damager != null ->
+            {
+                // Mob targeting damager or a player
+                if (damager.equals(mob.getTarget()) || mob.getTarget() instanceof Player)
+                {
+                    return true;
+                }
+
+                // Mob targeting damager's pet
+                if (mob.getTarget() instanceof Tameable tameableTarget && damager.equals(tameableTarget.getOwner()))
+                {
+                    return true;
+                }
+
+                // Damager is pet and mob is targeting owner
+                if (damager instanceof Tameable tameable && tameable.getOwner() != null && tameable.getOwner().equals(mob.getTarget()))
+                {
+                    return true;
+                }
+
+                if (mob.getPassengers().isEmpty() || !(mob.getPassengers().getFirst() instanceof Mob driver))
+                {
+                    return false;
+                }
+
+                // Check controlling passenger as they control hostility
+                return isHostile(driver, damager);
+            }
+
+            // Consider hostile if mob or its controlling passenger:
+            // - Are targeting a player
+            // - Are targeting a pet of a player
+            case Mob mob ->
+            {
+                // Mob targeting player
+                if (mob.getTarget() instanceof Player)
+                {
+                    return true;
+                }
+
+                // Mob targeting player's pet
+                if (mob.getTarget() instanceof Tameable tameableTarget && tameableTarget.getOwner() instanceof Player)
+                {
+                    return true;
+                }
+
+                if (mob.getPassengers().isEmpty() || !(mob.getPassengers().getFirst() instanceof Mob driver))
+                {
+                    return false;
+                }
+
+                // Check controlling passenger as they control hostility
+                return isHostile(driver, null);
+            }
+            default ->
+            {
+                return false;
+            }
         }
-
-        if (entity instanceof Enemy) return true;
-
-        EntityType type = entity.getType();
-
-        if (entity instanceof Rabbit rabbit)
-            return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
-
-        if ((TEMPTABLE_SEMI_HOSTILES.contains(type)) && entity instanceof Mob mob)
-            return !entity.getPersistentDataContainer().has(luredByPlayer, PersistentDataType.BYTE) && mob.getTarget() != null;
-
-        return false;
     }
 
     /**
@@ -453,7 +484,7 @@ public class EntityDamageHandler implements Listener
         if (!(event.damaged() instanceof Tameable tameable) || !tameable.isTamed())
         {
             // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
-            return event.damaged().getType() == EntityType.WOLF;
+            return false;
         }
 
         AnimalTamer owner = tameable.getOwner();
@@ -472,12 +503,6 @@ public class EntityDamageHandler implements Listener
         //allow for admin override
         PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
         if (attackerData.ignoreClaims) return true;
-
-        // Allow players to attack wolves (dogs) if under attack by them.
-        if (tameable.getType() == EntityType.WOLF && tameable.getTarget() != null)
-        {
-            if (tameable.getTarget() == attacker) return true;
-        }
 
         event.setCancelled(true);
         if (sendMessages)
@@ -740,7 +765,9 @@ public class EntityDamageHandler implements Listener
         {
             this(
                     event.getEntity(),
-                    event instanceof EntityDamageByEntityEvent damageBy ? damageBy.getDamager() : null,
+                    event instanceof EntityDamageByEntityEvent damageBy ?
+                            damageBy.getDamageSource().getCausingEntity() != null ? damageBy.getDamageSource().getCausingEntity() : damageBy.getDamager()
+                    : null,
                     event.getCause(),
                     event
             );
