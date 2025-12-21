@@ -18,15 +18,16 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 
 //sends a message to all online players
 //used to send delayed messages, for example a quit message after the player has been gone a while 
 class BroadcastMessageTask implements Runnable
 {
-    private final String message;
+    private final Component message;
 
-    public BroadcastMessageTask(String message)
+    public BroadcastMessageTask(Component message)
     {
         this.message = message;
     }
@@ -34,6 +35,6 @@ class BroadcastMessageTask implements Runnable
     @Override
     public void run()
     {
-        Bukkit.getServer().broadcastMessage(this.message);
+        Bukkit.getServer().broadcast(this.message);
     }
 }

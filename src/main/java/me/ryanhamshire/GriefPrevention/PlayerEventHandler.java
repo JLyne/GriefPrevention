@@ -28,6 +28,7 @@ import com.griefprevention.visualization.VisualizationType;
 import io.papermc.paper.event.player.PlayerOpenSignEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -307,9 +308,9 @@ class PlayerEventHandler implements Listener
         }
 
         //silence notifications when they're coming too fast
-        if (event.getJoinMessage() != null && this.shouldSilenceNotification())
+        if (event.joinMessage() != null && this.shouldSilenceNotification())
         {
-            event.setJoinMessage(null);
+            event.joinMessage(null);
         }
 
         //in case player has changed his name, on successful login, update UUID > Name mapping
@@ -318,15 +319,15 @@ class PlayerEventHandler implements Listener
         //if we're holding a logout message for this player, don't send that or this event's join message
         if (instance.config_spam_logoutMessageDelaySeconds > 0)
         {
-            String joinMessage = event.getJoinMessage();
-            if (joinMessage != null && !joinMessage.isEmpty())
+            Component joinMessage = event.joinMessage();
+            if (joinMessage != null)
             {
                 Integer taskID = this.heldLogoutMessages.get(player.getUniqueId());
                 if (taskID != null && Bukkit.getScheduler().isQueued(taskID))
                 {
                     Bukkit.getScheduler().cancelTask(taskID);
-                    player.sendMessage(event.getJoinMessage());
-                    event.setJoinMessage("");
+                    player.sendMessage(joinMessage);
+                    event.joinMessage(null);
                 }
             }
         }
@@ -355,11 +356,13 @@ class PlayerEventHandler implements Listener
         //FEATURE: prevent death message spam by implementing a "cooldown period" for death messages
         Player player = event.getEntity();
         Long lastDeathTime = this.deathTimestamps.get(player.getUniqueId());
+        Component deathMessage = event.deathMessage();
+
         long now = Calendar.getInstance().getTimeInMillis();
-        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000 && event.getDeathMessage() != null)
+        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000L && deathMessage != null)
         {
-            player.sendMessage(event.getDeathMessage());  //let the player assume his death message was broadcasted to everyone
-            event.setDeathMessage(null);
+            player.sendMessage(deathMessage);  //let the player assume his death message was broadcasted to everyone
+            event.deathMessage(null);
         }
 
         this.deathTimestamps.put(player.getUniqueId(), now);
@@ -381,9 +384,9 @@ class PlayerEventHandler implements Listener
         PlayerData playerData = this.dataStore.getPlayerData(playerID);
 
         //silence notifications when they're coming too fast
-        if (event.getQuitMessage() != null && this.shouldSilenceNotification())
+        if (event.quitMessage() != null && this.shouldSilenceNotification())
         {
-            event.setQuitMessage(null);
+            event.quitMessage(null);
         }
 
         //make sure his data is all saved - he might have accrued some claim blocks while playing that were not saved immediately
@@ -398,13 +401,13 @@ class PlayerEventHandler implements Listener
         //send quit message later, but only if the player stays offline
         if (instance.config_spam_logoutMessageDelaySeconds > 0)
         {
-            String quitMessage = event.getQuitMessage();
-            if (quitMessage != null && !quitMessage.isEmpty())
+            Component quitMessage = event.quitMessage();
+            if (quitMessage != null)
             {
                 BroadcastMessageTask task = new BroadcastMessageTask(quitMessage);
                 int taskID = Bukkit.getScheduler().scheduleSyncDelayedTask(instance, task, 20L * instance.config_spam_logoutMessageDelaySeconds);
                 this.heldLogoutMessages.put(playerID, taskID);
-                event.setQuitMessage("");
+                event.quitMessage(null);
             }
         }
     }
