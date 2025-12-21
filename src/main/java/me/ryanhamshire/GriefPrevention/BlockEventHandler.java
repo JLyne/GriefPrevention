@@ -42,7 +42,6 @@ import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -64,7 +63,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -1115,45 +1113,6 @@ public class BlockEventHandler implements Listener
                     event.setCancelled(true);
                 }
             }
-        }
-    }
-
-    //Stop projectiles from destroying blocks that don't fire a proper event
-    @EventHandler(ignoreCancelled = true)
-    private void chorusFlower(ProjectileHitEvent event)
-    {
-        //don't track in worlds where claims are not enabled
-        if (!GriefPrevention.instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
-
-        Block block = event.getHitBlock();
-
-        // Ensure projectile affects block.
-        if (block == null || (block.getType() != Material.CHORUS_FLOWER  && block.getType() != Material.DECORATED_POT))
-            return;
-
-        Claim claim = dataStore.getClaimAt(block.getLocation(), false, null);
-        if (claim == null)
-            return;
-
-        Player shooter = null;
-        Projectile projectile = event.getEntity();
-
-        if (projectile.getShooter() instanceof Player)
-            shooter = (Player) projectile.getShooter();
-
-        if (shooter == null)
-        {
-            event.setCancelled(true);
-            return;
-        }
-
-        Supplier<String> allowContainer = claim.checkPermission(shooter, ClaimPermission.Inventory, event);
-
-        if (allowContainer != null)
-        {
-            event.setCancelled(true);
-            GriefPrevention.sendMessage(shooter, TextMode.Err, allowContainer.get());
-            return;
         }
     }
 
