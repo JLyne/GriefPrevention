@@ -70,10 +70,6 @@ public class PlayerData
     //visualization
     private transient @Nullable BoundaryVisualization visibleBoundaries = null;
 
-    /** @deprecated Use {@link #getVisibleBoundaries} and {@link #setVisibleBoundaries(BoundaryVisualization)} */
-    @Deprecated(forRemoval = true, since = "16.18")
-    public Visualization currentVisualization = null;
-
     //ignore claims mode
     public boolean ignoreClaims = false;
 
