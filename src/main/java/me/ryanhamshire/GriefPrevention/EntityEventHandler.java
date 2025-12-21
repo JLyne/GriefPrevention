@@ -346,11 +346,20 @@ public class EntityEventHandler implements Listener
                 GriefPrevention.instance.dataStore.getClaimAt(((BlockProjectileSource) projectileSource).getBlock().getLocation(), false, claim) == claim;
     }
 
-    //don't allow zombies to break down doors
+    //don't allow zombies to break down doors in claims
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onZombieBreakDoor(EntityBreakDoorEvent event)
     {
-        if (!GriefPrevention.instance.config_zombiesBreakDoors) event.setCancelled(true);
+        if (GriefPrevention.instance.config_zombiesBreakDoors) {
+            return;
+        }
+
+        Claim claim = GriefPrevention.instance.dataStore.getClaimAt(
+            event.getBlock().getLocation(), false, null);
+
+        if (claim != null) {
+            event.setCancelled(true);
+        }
     }
 
     //don't allow entities to trample crops
