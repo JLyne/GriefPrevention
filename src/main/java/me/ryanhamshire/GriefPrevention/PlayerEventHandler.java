@@ -559,15 +559,6 @@ class PlayerEventHandler implements Listener
                     return;
                 }
             }
-            else  //world repair code for a now-fixed GP bug //TODO: necessary anymore?
-            {
-                //ensure this entity can be tamed by players
-                tameable.setOwner(null);
-                if (tameable instanceof InventoryHolder holder)
-                {
-                    holder.getInventory().clear();
-                }
-            }
         }
 
         //if entity is a copper golem and has a summoner, apply special rules
