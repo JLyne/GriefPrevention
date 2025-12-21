@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.destroystokyo.paper.MaterialSetTag;
+import com.destroystokyo.paper.MaterialTags;
 import com.griefprevention.protection.ProtectionHelper;
 import com.griefprevention.util.command.MonitorableCommand;
 import com.griefprevention.util.command.MonitoredCommands;
@@ -88,7 +90,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -111,10 +112,6 @@ class PlayerEventHandler implements Listener
     private MonitoredCommands chatCommands;
     private MonitoredCommands whisperCommands;
 
-    // Definitions for specific material groups that do not have a tag
-    private final Set<Material> spawnEggs;
-    private final Set<Material> dyes;
-
     //typical constructor, yawn
     PlayerEventHandler(DataStore dataStore, GriefPrevention plugin)
     {
@@ -124,16 +121,6 @@ class PlayerEventHandler implements Listener
         this.accessTrustCommands = new MonitoredCommands(List.of());
         this.chatCommands = new MonitoredCommands(List.of());
         this.whisperCommands = new MonitoredCommands(List.of());
-
-        spawnEggs = new HashSet<>();
-        dyes = new HashSet<>();
-        for (Material material : Material.values())
-        {
-            if (material.name().endsWith("_SPAWN_EGG"))
-                spawnEggs.add(material);
-            else if (material.name().endsWith("_DYE"))
-                dyes.add(material);
-        }
 
         reload();
     }
@@ -716,8 +703,6 @@ class PlayerEventHandler implements Listener
         }
     }
 
-
-
     //when a player throws an egg
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerThrowEgg(PlayerEggThrowEvent event)
@@ -1010,20 +995,14 @@ class PlayerEventHandler implements Listener
         if (clickedBlock != null && instance.config_claims_preventTheft && (
                 event.getAction() == Action.RIGHT_CLICK_BLOCK && (
                         (this.isInventoryHolder(clickedBlock) && clickedBlock.getType() != Material.LECTERN) ||
-                                clickedBlockType == Material.ANVIL ||
+                                MaterialSetTag.ANVIL.isTagged(clickedBlockType) ||
+                                MaterialSetTag.BEEHIVES.isTagged(clickedBlockType) ||
+                                MaterialSetTag.CAULDRONS.isTagged(clickedBlockType) ||
+                                MaterialSetTag.CAVE_VINES.isTagged(clickedBlockType) ||
                                 clickedBlockType == Material.BEACON ||
-                                clickedBlockType == Material.BEE_NEST ||
-                                clickedBlockType == Material.BEEHIVE ||
                                 clickedBlockType == Material.BELL ||
                                 clickedBlockType == Material.CAKE ||
                                 clickedBlockType == Material.CARTOGRAPHY_TABLE ||
-                                clickedBlockType == Material.CAULDRON ||
-                                clickedBlockType == Material.WATER_CAULDRON ||
-                                clickedBlockType == Material.LAVA_CAULDRON ||
-                                clickedBlockType == Material.CAVE_VINES ||
-                                clickedBlockType == Material.CAVE_VINES_PLANT ||
-                                clickedBlockType == Material.CHIPPED_ANVIL ||
-                                clickedBlockType == Material.DAMAGED_ANVIL ||
                                 clickedBlockType == Material.GRINDSTONE ||
                                 clickedBlockType == Material.JUKEBOX ||
                                 clickedBlockType == Material.LOOM ||
@@ -1162,13 +1141,13 @@ class PlayerEventHandler implements Listener
             // Require build permission for items that may have an effect on the world when used.
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
-                    || (spawnEggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
+                    || (MaterialTags.SPAWN_EGGS.isTagged(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
                     || materialInHand == Material.END_CRYSTAL
                     || materialInHand == Material.FLINT_AND_STEEL
                     || materialInHand == Material.INK_SAC
                     || materialInHand == Material.GLOW_INK_SAC
                     || materialInHand == Material.HONEYCOMB
-                    || dyes.contains(materialInHand)))
+                    || MaterialTags.DYES.isTagged(materialInHand)))
             {
                 Supplier<String> noBuildReason = ProtectionHelper.checkPermission(player, event.getClickedBlock().getLocation(), ClaimPermission.Build, event);
                 if (noBuildReason != null)

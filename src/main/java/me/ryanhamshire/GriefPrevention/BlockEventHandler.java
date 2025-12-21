@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.destroystokyo.paper.MaterialTags;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
@@ -467,8 +468,7 @@ public class BlockEventHandler implements Listener
 
         //warn players about disabled pistons outside of land claims
         if (GriefPrevention.instance.config_pistonMovement == PistonMode.CLAIMS_ONLY &&
-                (block.getType() == Material.PISTON || block.getType() == Material.STICKY_PISTON) &&
-                claim == null)
+                MaterialTags.PISTONS.isTagged(block.getType()) && claim == null)
         {
             GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoPistonsOutsideClaims);
         }
