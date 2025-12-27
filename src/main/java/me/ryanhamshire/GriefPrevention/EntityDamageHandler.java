@@ -1,15 +1,22 @@
 package me.ryanhamshire.GriefPrevention;
 
+import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Animals;
+import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Creature;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Donkey;
+import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.EvokerFangs;
 import org.bukkit.entity.Explosive;
+import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
@@ -21,9 +28,11 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Raider;
 import org.bukkit.entity.Slime;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vex;
+import org.bukkit.entity.Villager;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.event.Cancellable;
@@ -87,14 +96,20 @@ public class EntityDamageHandler implements Listener
         this.handleEntityDamageEvent(new EntityDamageInstance(event), false);
     }
 
+    @EventHandler(ignoreCancelled = true)
+	public void onEntityKnockback(EntityPushedByEntityAttackEvent event)
+    {
+		this.handleEntityDamageEvent(new EntityDamageInstance(event), false);
+	}
+
     private void handleEntityDamageEvent(@NotNull EntityDamageInstance event, boolean sendMessages)
     {
-
         //horse protections can be disabled
         if (event.damaged() instanceof Horse && !instance.config_claims_protectHorses) return;
         if (event.damaged() instanceof Donkey && !instance.config_claims_protectDonkeys) return;
         if (event.damaged() instanceof Mule && !instance.config_claims_protectDonkeys) return;
         if (event.damaged() instanceof Llama && !instance.config_claims_protectLlamas) return;
+
         //protected death loot can't be destroyed, only picked up or despawned due to expiration
         if (event.damaged().getType() == EntityType.ITEM)
         {
@@ -117,21 +132,8 @@ public class EntityDamageHandler implements Listener
         if (event.damager() == null) return;
 
         //determine which player is attacking, if any
-        Player attacker = null;
-        Projectile arrow = null;
+        Player attacker = event.getResponsiblePlayer();
         Entity damageSource = event.damager();
-        if (damageSource instanceof Player damager)
-        {
-            attacker = damager;
-        }
-        else if (damageSource instanceof Projectile projectile)
-        {
-            arrow = projectile;
-            if (arrow.getShooter() instanceof Player shooter)
-            {
-                attacker = shooter;
-            }
-        }
 
         //don't track in worlds where claims are not enabled
         if (!instance.claimsEnabledForWorld(event.damaged().getWorld())) return;
@@ -140,7 +142,7 @@ public class EntityDamageHandler implements Listener
         if (handleClaimedBuildTrustDamageByEntity(event, attacker, sendMessages)) return;
 
         //if the entity is a non-monster creature (remember monsters disqualified above), or a vehicle
-        if (handleCreatureDamageByEntity(event, attacker, arrow, sendMessages)) return;
+        handleCreatureDamageByEntity(event, attacker, damageSource, sendMessages);
     }
 
     /**
@@ -311,13 +313,11 @@ public class EntityDamageHandler implements Listener
             boolean sendMessages)
     {
         EntityType entityType = event.damaged().getType();
-        if (entityType != EntityType.ITEM_FRAME
-                && entityType != EntityType.GLOW_ITEM_FRAME
-                && entityType != EntityType.ARMOR_STAND
-                && entityType != EntityType.VILLAGER
-                && entityType != EntityType.END_CRYSTAL
-                // Item Displays have no hitbox, but display plugins may manually fire events where appropriate.
-                && entityType != EntityType.ITEM_DISPLAY)
+        if (!(event.damaged() instanceof Hanging)
+                && !(event.damaged() instanceof Display)
+                && !(event.damaged() instanceof ArmorStand)
+                && !(event.damaged() instanceof Villager)
+                && !(event.damaged() instanceof EnderCrystal))
         {
             return false;
         }
@@ -372,14 +372,14 @@ public class EntityDamageHandler implements Listener
      *
      * @param event the {@link EntityDamageInstance}
      * @param attacker the attacking {@link Player}, if any
-     * @param arrow the {@link Projectile} dealing the damage, if any
+     * @param damageSource the {@link Entity} dealing the damage
      * @param sendMessages whether to send denial messages to users involved
      * @return true if the damage is handled
      */
     private boolean handleCreatureDamageByEntity(
             @NotNull EntityDamageInstance event,
             @Nullable Player attacker,
-            @Nullable Projectile arrow,
+            @Nullable Entity damageSource,
             boolean sendMessages)
     {
         if (!(event.damaged() instanceof Creature) || !instance.config_claims_protectCreatures)
@@ -388,10 +388,8 @@ public class EntityDamageHandler implements Listener
         //if entity is tameable and has an owner, apply special rules
         if (handlePetDamageByEntity(event, attacker, sendMessages)) return true;
 
-        //if entity is a Copper Golem and has an summoner, apply special rules
+        //if entity is a Copper Golem and has a summoner, apply special rules
         if (handleCopperGolemByEntity(event, attacker, sendMessages)) return true;
-
-        Entity damageSource = event.damager();
 
         // Can't be hit, but for simplicity
         if (damageSource == null) return false;
@@ -429,7 +427,7 @@ public class EntityDamageHandler implements Listener
         {
             event.setCancelled(true);
             // Always remove projectiles shot by non-players.
-            if (arrow != null) arrow.remove();
+            if (damageSource instanceof Projectile projectile) projectile.remove();
             return true;
         }
 
@@ -460,8 +458,10 @@ public class EntityDamageHandler implements Listener
 
         event.setCancelled(true);
 
-        // Prevent projectiles from bouncing infinitely.
-        preventInfiniteBounce(arrow, event.damaged());
+        if (damageSource instanceof Projectile projectile) {
+            // Prevent projectiles from bouncing infinitely.
+            preventInfiniteBounce(projectile, event.damaged());
+        }
 
         if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
 
@@ -783,10 +783,34 @@ public class EntityDamageHandler implements Listener
             );
         }
 
+        EntityDamageInstance(@NotNull EntityPushedByEntityAttackEvent event)
+        {
+            this(
+                    event.getEntity(),
+                    event.getPushedBy(),
+                    EntityDamageEvent.DamageCause.ENTITY_ATTACK,
+                    event
+            );
+        }
+
         public void setCancelled(boolean cancelled)
         {
             if (this.original instanceof Cancellable cancellable) cancellable.setCancelled(cancelled);
         }
-    }
 
+        public Player getResponsiblePlayer() {
+            return switch (damager)
+            {
+                case null -> null;
+                case Player player -> player;
+                case Projectile projectile -> projectile.getShooter() instanceof Player player ? player : null;
+                case AreaEffectCloud cloud -> cloud.getSource() instanceof Player player ? player : null;
+                case TNTPrimed tnt -> tnt.getSource() instanceof Player player ? player : null;
+                case Tameable tameable -> tameable.getOwner() instanceof Player player ? player : null;
+                case CopperGolem golem -> golem.getSummoner() != null ? Bukkit.getServer().getPlayer(golem.getSummoner()) : null;
+                case LightningStrike lightning -> lightning.getCausingEntity() instanceof Player player ? player : null;
+                default -> null;
+            };
+        }
+    }
 }
