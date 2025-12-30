@@ -69,7 +69,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.MetadataValue;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 import org.jetbrains.annotations.NotNull;
@@ -1160,25 +1160,30 @@ public class BlockEventHandler implements Listener
             return;
         }
 
-        List<MetadataValue> meta = event.getItem().getMetadata("GP_ITEMOWNER");
+        String owner = event.getItem().getPersistentDataContainer().get(
+                GriefPrevention.instance.itemOwnerKey, PersistentDataType.STRING);
+
         // We only care about an item if it has been flagged as belonging to a player.
-        if (meta.isEmpty())
+        if (owner == null)
         {
             return;
         }
 
-        UUID itemOwnerId = (UUID) meta.get(0).value();
-        // Determine if the owner has unlocked their dropped items.
-        // This first requires that the player is logged in.
-        if (Bukkit.getServer().getPlayer(itemOwnerId) != null)
-        {
-            PlayerData itemOwner = dataStore.getPlayerData(itemOwnerId);
-            // If locked, don't allow pickup
-            if (!itemOwner.dropsAreUnlocked)
+        try {
+            UUID itemOwnerId = UUID.fromString(owner);
+
+            // Determine if the owner has unlocked their dropped items.
+            // This first requires that the player is logged in.
+            if (Bukkit.getServer().getPlayer(itemOwnerId) != null)
             {
-                event.setCancelled(true);
+                PlayerData itemOwner = dataStore.getPlayerData(itemOwnerId);
+                // If locked, don't allow pickup
+                if (!itemOwner.dropsAreUnlocked)
+                {
+                    event.setCancelled(true);
+                }
             }
-        }
+        } catch(IllegalArgumentException ignored) {}
     }
 
     @EventHandler(ignoreCancelled = true)

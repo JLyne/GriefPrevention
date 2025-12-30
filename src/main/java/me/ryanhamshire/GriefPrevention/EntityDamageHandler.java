@@ -113,7 +113,7 @@ public class EntityDamageHandler implements Listener
         //protected death loot can't be destroyed, only picked up or despawned due to expiration
         if (event.damaged().getType() == EntityType.ITEM)
         {
-            if (event.damaged().hasMetadata("GP_ITEMOWNER"))
+            if (event.damaged().getPersistentDataContainer().has(GriefPrevention.instance.itemOwnerKey))
             {
                 event.setCancelled(true);
             }

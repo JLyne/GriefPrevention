@@ -64,8 +64,7 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingBreakEvent.RemoveCause;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 import org.jetbrains.annotations.NotNull;
@@ -620,7 +619,8 @@ public class EntityEventHandler implements Listener
             }
 
             //otherwise, mark item with protection information
-            newItem.setMetadata("GP_ITEMOWNER", new FixedMetadataValue(GriefPrevention.instance, pendingProtection.owner));
+            newItem.getPersistentDataContainer().set(
+                    GriefPrevention.instance.itemOwnerKey, PersistentDataType.STRING, pendingProtection.owner.toString());
 
             //and remove pending protection data
             watchList.remove(i);
@@ -713,9 +713,7 @@ public class EntityEventHandler implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onItemMerge(ItemMergeEvent event)
     {
-        Item item = event.getEntity();
-        List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-        event.setCancelled(!data.isEmpty());
+        event.setCancelled(event.getEntity().getPersistentDataContainer().has(GriefPrevention.instance.itemOwnerKey));
     }
 
     //when an entity picks up an item
@@ -840,37 +838,42 @@ public class EntityEventHandler implements Listener
     private void protectLockedDrops(@NotNull EntityPickupItemEvent event, @Nullable Player player)
     {
         Item item = event.getItem();
-        List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
+        String data = item.getPersistentDataContainer()
+                .get(GriefPrevention.instance.itemOwnerKey, PersistentDataType.STRING);
 
-        // Ignore absent or invalid data.
-        if (data.isEmpty() || !(data.get(0).value() instanceof UUID ownerID)) return;
+        // Ignore absent data.
+        if (data == null) return;
 
-        // Get owner from stored UUID.
-        OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
+        try {
+            UUID ownerID = UUID.fromString(data);
 
-        // Owner must be online and can pick up their own drops.
-        if (!owner.isOnline() || Objects.equals(player, owner)) return;
+            // Get owner from stored UUID.
+            OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
 
-        PlayerData playerData = this.dataStore.getPlayerData(ownerID);
+            // Owner must be online and can pick up their own drops.
+            if (!owner.isOnline() || Objects.equals(player, owner)) return;
 
-        // If drops are unlocked, allow pick up.
-        if (playerData.dropsAreUnlocked) return;
+            PlayerData playerData = this.dataStore.getPlayerData(ownerID);
 
-        // Block pick up.
-        event.setCancelled(true);
+            // If drops are unlocked, allow pick up.
+            if (playerData.dropsAreUnlocked) return;
 
-        // Non-players (dolphins, allays) do not need to generate prompts.
-        if (player == null)
-        {
-            return;
-        }
+            // Block pick up.
+            event.setCancelled(true);
 
-        // If the owner hasn't been instructed how to unlock, send explanatory messages.
-        if (!playerData.receivedDropUnlockAdvertisement)
-        {
-            GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, GriefPrevention.lookupPlayerName(ownerID));
-            playerData.receivedDropUnlockAdvertisement = true;
-        }
+            // Non-players (dolphins, allays) do not need to generate prompts.
+            if (player == null)
+            {
+                return;
+            }
+
+            // If the owner hasn't been instructed how to unlock, send explanatory messages.
+            if (!playerData.receivedDropUnlockAdvertisement)
+            {
+                GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, GriefPrevention.lookupPlayerName(ownerID));
+                playerData.receivedDropUnlockAdvertisement = true;
+            }
+        } catch (IllegalArgumentException ignored) {}
     }
 }
