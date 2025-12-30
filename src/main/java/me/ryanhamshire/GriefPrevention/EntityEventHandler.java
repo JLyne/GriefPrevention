@@ -189,10 +189,9 @@ public class EntityEventHandler implements Listener
         Block block = event.getBlock();
         Location blockLocation = block.getLocation();
 
-        //if changing a block TO air, this is when the falling block formed.  note its original location
+        //if changing a block TO air, this is when the falling block formed.
         if (event.getTo() == Material.AIR)
         {
-            fallingBlock.setMetadata("GP_FALLINGBLOCK", new FixedMetadataValue(GriefPrevention.instance, blockLocation));
             return;
         }
 
@@ -202,9 +201,10 @@ public class EntityEventHandler implements Listener
         // If claims are disabled, the block is always allowed to form.
         if (claimsMode == ClaimsMode.Disabled) return;
 
-        List<MetadataValue> values = fallingBlock.getMetadata("GP_FALLINGBLOCK");
-        //if we're not sure where this entity came from (maybe another plugin didn't follow the standard?), allow the block to form
-        if (values.isEmpty() || !(values.get(0).value() instanceof Location originalLocation)) return;
+        Location originalLocation = fallingBlock.getOrigin();
+
+        //if we're not sure where this entity came from, allow the block to form
+        if (originalLocation == null) return;
 
         // If it fell straight down, allow.
         if (Objects.equals(originalLocation.getWorld(), block.getWorld())
