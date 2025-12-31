@@ -300,16 +300,10 @@ public class BlockEventHandler implements Listener
         {
             playerData.lastClaim = claim;
 
-            //warn about TNT not destroying claimed blocks (10 minute cooldown)
-
-            Long now = null;
-            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed && (playerData.explosivesWarningTimestamp == null || (now = System.currentTimeMillis()) - playerData.explosivesWarningTimestamp > 600000))
+            //warn about TNT not destroying claimed blocks
+            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed)
             {
-                if (now == null) now = System.currentTimeMillis();
-                playerData.explosivesWarningTimestamp = now;
-
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageClaims);
-                GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimExplosivesAdvertisement);
+                playerData.sendExplosivesWarning();
             }
 
             //if the player has permission for the claim and he's placing UNDER the claim
@@ -433,25 +427,7 @@ public class BlockEventHandler implements Listener
                     && playerData.getClaims().isEmpty()) || (playerData.lastClaim != null
                     && playerData.lastClaim.isNear(player.getLocation(), 15))))
             {
-                Long now = null;
-                if (playerData.buildWarningTimestamp == null || (now = System.currentTimeMillis()) - playerData.buildWarningTimestamp > 600000)  //10 minute cooldown
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Warn, Messages.BuildingOutsideClaims);
-                    playerData.warnedAboutBuildingOutsideClaims = true;
-
-                    if (now == null) now = System.currentTimeMillis();
-                    playerData.buildWarningTimestamp = now;
-
-                    if (playerData.getClaims().size() < 2)
-                    {
-                        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
-                    }
-
-                    if (playerData.lastClaim != null)
-                    {
-                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, VisualizationType.CLAIM, block);
-                    }
-                }
+                playerData.sendBuildWarning(block);
             }
         }
 

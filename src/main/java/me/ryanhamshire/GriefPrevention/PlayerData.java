@@ -19,9 +19,12 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -92,10 +95,10 @@ public class PlayerData
     String messageOnRespawn = null;
 
     //timestamp for last "you're building outside your land claims" message
-    Long buildWarningTimestamp = null;
+    private Long buildWarningTimestamp = null;
 
     //timestamp for last warning when placing TNT on explosion protected claim
-    Long explosivesWarningTimestamp = null;
+    private Long explosivesWarningTimestamp = null;
 
     //timestamp for last notification of blocked pickup attempt
     private Long pickupBlockExplanationTimestamp = null;
@@ -346,5 +349,44 @@ public class PlayerData
         pickupBlockExplanationTimestamp = now;
         GriefPrevention.sendMessage(Bukkit.getPlayer(playerID), TextMode.Err, Messages.PickupBlockedExplanation,
                 GriefPrevention.lookupPlayerName(itemOwner));
+    }
+
+    public void sendExplosivesWarning() {
+        long now = System.currentTimeMillis();
+
+        // 10 minute cooldown
+        if (explosivesWarningTimestamp != null && (System.currentTimeMillis()) - explosivesWarningTimestamp < 600000)
+        {
+            return;
+        }
+
+        explosivesWarningTimestamp = now;
+
+        Player player = Bukkit.getPlayer(playerID);
+        GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageClaims);
+        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimExplosivesAdvertisement);
+    }
+
+    public void sendBuildWarning(Block block) {
+        long now = System.currentTimeMillis();
+
+        if (buildWarningTimestamp != null && (now - buildWarningTimestamp < 600000))  //10 minute cooldown
+        {
+            Player player = Bukkit.getPlayer(playerID);
+            GriefPrevention.sendMessage(player, TextMode.Warn, Messages.BuildingOutsideClaims);
+
+            warnedAboutBuildingOutsideClaims = true;
+            buildWarningTimestamp = now;
+
+            if (getClaims().size() < 2)
+            {
+                GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+            }
+
+            if (lastClaim != null)
+            {
+                BoundaryVisualization.visualizeClaim(player, lastClaim, VisualizationType.CLAIM, block);
+            }
+        }
     }
 }
