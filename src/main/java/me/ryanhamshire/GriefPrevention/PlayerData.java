@@ -97,6 +97,9 @@ public class PlayerData
     //timestamp for last warning when placing TNT on explosion protected claim
     Long explosivesWarningTimestamp = null;
 
+    //timestamp for last notification of blocked pickup attempt
+    private Long pickupBlockExplanationTimestamp = null;
+
     //the number of claim blocks a player has available for claiming land
     public int getRemainingClaimBlocks()
     {
@@ -333,4 +336,15 @@ public class PlayerData
         this.visibleBoundaries = visibleBoundaries;
     }
 
+    public void sendPickupBlockedExplanation(UUID itemOwner) {
+        long now = System.currentTimeMillis();
+
+        if (pickupBlockExplanationTimestamp != null && (now - pickupBlockExplanationTimestamp < 5000)) {
+            return;
+        }
+
+        pickupBlockExplanationTimestamp = now;
+        GriefPrevention.sendMessage(Bukkit.getPlayer(playerID), TextMode.Err, Messages.PickupBlockedExplanation,
+                GriefPrevention.lookupPlayerName(itemOwner));
+    }
 }

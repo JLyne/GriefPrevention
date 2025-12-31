@@ -850,13 +850,18 @@ public class EntityEventHandler implements Listener
             // Get owner from stored UUID.
             OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
 
-            // Owner must be online and can pick up their own drops.
-            if (!owner.isOnline() || Objects.equals(player, owner)) return;
+            // Owner can pick up their own drops.
+            if (Objects.equals(player, owner)) return;
 
-            PlayerData playerData = this.dataStore.getPlayerData(ownerID);
+            PlayerData ownerData = null;
 
-            // If drops are unlocked, allow pick up.
-            if (playerData.dropsAreUnlocked) return;
+            if (owner.isOnline())
+            {
+                ownerData = this.dataStore.getPlayerData(ownerID);
+
+                 // If drops are unlocked, allow pick up.
+                if (ownerData.dropsAreUnlocked) return;
+            }
 
             // Block pick up.
             event.setCancelled(true);
@@ -868,12 +873,14 @@ public class EntityEventHandler implements Listener
             }
 
             // If the owner hasn't been instructed how to unlock, send explanatory messages.
-            if (!playerData.receivedDropUnlockAdvertisement)
+            if (ownerData != null && !ownerData.receivedDropUnlockAdvertisement)
             {
                 GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, GriefPrevention.lookupPlayerName(ownerID));
-                playerData.receivedDropUnlockAdvertisement = true;
+                ownerData.receivedDropUnlockAdvertisement = true;
             }
+
+            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            playerData.sendPickupBlockedExplanation(ownerID);
         } catch (IllegalArgumentException ignored) {}
     }
 }
