@@ -771,6 +771,19 @@ class PlayerEventHandler implements Listener
             //give the player his available claim blocks count and claiming instructions, but only if he keeps the shovel equipped for a minimum time, to avoid mouse wheel spam
             if (instance.claimsEnabledForWorld(player.getWorld()))
             {
+                PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
+
+                //reset any work he might have been doing
+                playerData.lastShovelLocation = null;
+                playerData.claimResizing = null;
+
+                //always reset to basic claims mode
+                if (playerData.shovelMode != ShovelMode.Basic)
+                {
+                    playerData.shovelMode = ShovelMode.Basic;
+                    GriefPrevention.sendMessage(player, TextMode.Info, Messages.ShovelBasicClaimMode);
+                }
+
                 EquipShovelProcessingTask task = new EquipShovelProcessingTask(player);
                 instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 15L);  //15L is approx. 3/4 of a second
             }

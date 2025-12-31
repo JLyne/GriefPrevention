@@ -45,17 +45,6 @@ class EquipShovelProcessingTask implements Runnable
 
         PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
-        //reset any work he might have been doing
-        playerData.lastShovelLocation = null;
-        playerData.claimResizing = null;
-
-        //always reset to basic claims mode
-        if (playerData.shovelMode != ShovelMode.Basic)
-        {
-            playerData.shovelMode = ShovelMode.Basic;
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.ShovelBasicClaimMode);
-        }
-
         //tell him how many claim blocks he has available
         int remainingBlocks = playerData.getRemainingClaimBlocks();
         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.RemainingBlocks, String.valueOf(remainingBlocks));
