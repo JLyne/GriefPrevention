@@ -1,6 +1,7 @@
 package me.ryanhamshire.GriefPrevention;
 
 import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
+import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Animals;
@@ -85,6 +86,13 @@ public class EntityDamageHandler implements Listener
     //when an entity is damaged
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onEntityDamage(@NotNull EntityDamageEvent event)
+    {
+        this.handleEntityDamageEvent(new EntityDamageInstance(event), true);
+    }
+
+    //when a player attempts an attack
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    public void onPrePlayerAttack(@NotNull PrePlayerAttackEntityEvent event)
     {
         this.handleEntityDamageEvent(new EntityDamageInstance(event), true);
     }
@@ -769,6 +777,16 @@ public class EntityDamageHandler implements Listener
                             damageBy.getDamageSource().getCausingEntity() != null ? damageBy.getDamageSource().getCausingEntity() : damageBy.getDamager()
                     : null,
                     event.getCause(),
+                    event
+            );
+        }
+
+        EntityDamageInstance(@NotNull PrePlayerAttackEntityEvent event)
+        {
+            this(
+                    event.getAttacked(),
+                    event.getPlayer(),
+                    EntityDamageEvent.DamageCause.ENTITY_ATTACK,
                     event
             );
         }
