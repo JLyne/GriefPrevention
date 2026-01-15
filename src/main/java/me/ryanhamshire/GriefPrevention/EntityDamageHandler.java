@@ -254,7 +254,7 @@ public class EntityDamageHandler implements Listener
     private boolean handlePetDamageByEnvironment(@NotNull EntityDamageInstance event)
     {
         // If the damaged entity is not a pet or the pet has no owner, allow.
-        if (!(event.damaged() instanceof Tameable tameable && tameable.isTamed())
+        if (!(event.damaged() instanceof Tameable tameable && tameable.getOwnerUniqueId() != null)
                 && !(event.damaged() instanceof CopperGolem golem && golem.getSummoner() != null))
         {
             return false;
@@ -489,17 +489,15 @@ public class EntityDamageHandler implements Listener
             @Nullable Player attacker,
             boolean sendMessages)
     {
-        if (!(event.damaged() instanceof Tameable tameable) || !tameable.isTamed())
+        if (!(event.damaged() instanceof Tameable tameable))
         {
-            // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
             return false;
         }
 
         AnimalTamer owner = tameable.getOwner();
         if (owner == null)
         {
-            // Treat invalid state of tamed with no owner identically to untamed.
-            return tameable.getType() == EntityType.WOLF;
+            return false;
         }
 
         //limit attacks by players to owners and admins in ignore claims mode
@@ -537,9 +535,8 @@ public class EntityDamageHandler implements Listener
             @Nullable Player attacker,
             boolean sendMessages)
     {
-        if (!(event.damaged() instanceof CopperGolem golem) || golem.getSummoner() == null)
+        if (!(event.damaged() instanceof CopperGolem golem))
         {
-            // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
             return false;
         }
 

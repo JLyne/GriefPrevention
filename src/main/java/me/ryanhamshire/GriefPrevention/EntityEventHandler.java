@@ -28,6 +28,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -385,41 +386,48 @@ public class EntityEventHandler implements Listener
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityMount(EntityMountEvent event) {
-        boolean cancelled = false;
-        String ownerName = null;
+        String ownerName;
 
-        if ((event.getMount() instanceof Tameable tameable)
-                && tameable.isTamed()
-                && tameable.getOwner() != null
-                && !event.getEntity().equals(tameable.getOwner())) {
-            cancelled = true;
-            ownerName = tameable.getOwner().getName();
-        } else if ((event.getMount() instanceof CopperGolem copperGolem)
-                && copperGolem.getSummoner() != null
-                && !event.getEntity().getUniqueId().equals(copperGolem.getSummoner())) {
-            cancelled = true;
-            ownerName = Bukkit.getOfflinePlayer(copperGolem.getSummoner()).getName();
-        }
+        switch (event.getMount()) {
+            case Tameable tameable -> {
+                AnimalTamer owner = tameable.getOwner();
 
-        if (cancelled) {
-            if (event.getEntity() instanceof Player player) {
-                PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-
-                //if the player is an admin in ignore claims mode, always allow
-                if (playerData.ignoreClaims) {
+                if (owner == null || event.getEntity().equals(owner)) {
                     return;
                 }
 
-                if (ownerName == null) ownerName = "someone";
-                String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
-                if (player.hasPermission("griefprevention.ignoreclaims"))
-                    message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                ownerName = GriefPrevention.lookupPlayerName(owner);
+            }
+            case CopperGolem copperGolem -> {
+                UUID summoner = copperGolem.getSummoner();
 
-                GriefPrevention.sendMessage(player, TextMode.Err, message);
+                if (summoner == null || event.getEntity().getUniqueId().equals(summoner)) {
+                    return;
+                }
+
+                ownerName = GriefPrevention.lookupPlayerName(summoner);
+            }
+            default -> {
+                return;
+            }
+        }
+
+        if (event.getEntity() instanceof Player player) {
+            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+
+            //if the player is an admin in ignore claims mode, always allow
+            if (playerData.ignoreClaims) {
+                return;
             }
 
-            event.setCancelled(true);
+            String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
+            if (player.hasPermission("griefprevention.ignoreclaims"))
+                message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+
+            GriefPrevention.sendMessage(player, TextMode.Err, message);
         }
+
+        event.setCancelled(true);
     }
 
     //when an entity explodes...

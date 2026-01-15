@@ -34,7 +34,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
@@ -535,29 +534,24 @@ class PlayerEventHandler implements Listener
         //if entity is tameable and has an owner, apply special rules
         if (entity instanceof Tameable tameable)
         {
-            if (tameable.isTamed())
+            UUID ownerID = tameable.getOwnerUniqueId();
+
+            if (ownerID != null)
             {
-                if (tameable.getOwner() != null)
+                //if the player interacting is the owner or an admin in ignore claims mode, always allow
+                if (player.getUniqueId().equals(ownerID) || playerData.ignoreClaims)
                 {
-                    UUID ownerID = tameable.getOwner().getUniqueId();
-
-                    //if the player interacting is the owner or an admin in ignore claims mode, always allow
-                    if (player.getUniqueId().equals(ownerID) || playerData.ignoreClaims)
-                    {
-                        return;
-                    }
-
-                    //otherwise disallow
-                    OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
-                    String ownerName = owner.getName();
-                    if (ownerName == null) ownerName = "someone";
-                    String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
-                    if (player.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    GriefPrevention.sendMessage(player, TextMode.Err, message);
-                    event.setCancelled(true);
                     return;
                 }
+
+                //otherwise disallow
+                String ownerName = GriefPrevention.lookupPlayerName(ownerID);
+                String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
+                if (player.hasPermission("griefprevention.ignoreclaims"))
+                        message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                GriefPrevention.sendMessage(player, TextMode.Err, message);
+                event.setCancelled(true);
+                return;
             }
         }
 
@@ -576,9 +570,7 @@ class PlayerEventHandler implements Listener
 
 
                 //otherwise disallow
-                OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
-                String ownerName = owner.getName();
-                if (ownerName == null) ownerName = "someone";
+                String ownerName = GriefPrevention.lookupPlayerName(ownerID);
                 String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
                 if (player.hasPermission("griefprevention.ignoreclaims"))
                     message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
