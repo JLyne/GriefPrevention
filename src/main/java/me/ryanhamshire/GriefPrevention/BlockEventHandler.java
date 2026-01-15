@@ -289,13 +289,39 @@ public class BlockEventHandler implements Listener
             return;
         }
 
+        //FEATURE: limit wilderness tree planting to grass, or dirt with more blocks beneath it
+        if (Tag.SAPLINGS.isTagged(block.getType()) && GriefPrevention.instance.config_blockSkyTrees && GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
+        {
+            Block earthBlock = placeEvent.getBlockAgainst();
+            if (earthBlock.getType() != Material.SHORT_GRASS)
+            {
+                if (earthBlock.getRelative(BlockFace.DOWN).getType() == Material.AIR ||
+                        earthBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getType() == Material.AIR)
+                {
+                    placeEvent.setCancelled(true);
+                }
+            }
+        }
+    }
+
+    //when a player has placed a block...
+    @SuppressWarnings("null")
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onBlockPlaced(BlockPlaceEvent placeEvent)
+    {
+        Player player = placeEvent.getPlayer();
+        Block block = placeEvent.getBlock();
+
+        //don't track in worlds where claims are not enabled
+        if (!GriefPrevention.instance.claimsEnabledForWorld(placeEvent.getBlock().getWorld())) return;
+
         //if the block is being placed within or under an existing claim
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
         Claim claim = this.dataStore.getClaimAt(block.getLocation(), true, playerData.lastClaim);
 
         //If block is a chest, don't allow a DoubleChest to form across a claim boundary
         denyConnectingDoubleChestsAcrossClaimBoundary(claim, block, player);
-        
+
         if (claim != null)
         {
             playerData.lastClaim = claim;
@@ -402,20 +428,6 @@ public class BlockEventHandler implements Listener
             if (GriefPrevention.instance.config_claims_preventTheft && this.dataStore.getClaimAt(block.getLocation(), false, playerData.lastClaim) == null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnprotectedChestWarning);
-            }
-        }
-
-        //FEATURE: limit wilderness tree planting to grass, or dirt with more blocks beneath it
-        else if (Tag.SAPLINGS.isTagged(block.getType()) && GriefPrevention.instance.config_blockSkyTrees && GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
-        {
-            Block earthBlock = placeEvent.getBlockAgainst();
-            if (earthBlock.getType() != Material.SHORT_GRASS)
-            {
-                if (earthBlock.getRelative(BlockFace.DOWN).getType() == Material.AIR ||
-                        earthBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getType() == Material.AIR)
-                {
-                    placeEvent.setCancelled(true);
-                }
             }
         }
 
