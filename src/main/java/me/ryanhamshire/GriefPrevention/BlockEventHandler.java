@@ -275,7 +275,7 @@ public class BlockEventHandler implements Listener
                 if (claim != null)
                 {
                     playerData.lastClaim = claim;
-                    Supplier<String> noContainerReason = claim.checkPermission(player, ClaimPermission.Inventory, placeEvent);
+                    Supplier<String> noContainerReason = claim.checkPermission(player, ClaimPermission.Container, placeEvent);
                     if (noContainerReason == null)
                         return;
 
