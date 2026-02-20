@@ -599,7 +599,8 @@ public class BlockEventHandler implements Listener
             intersectionHandler = precisePistonIntersection(pistonBlock, pistonClaim, blocks, event);
         }
 
-        if (boxConflictsWithClaims(pistonBlock.getWorld(), movedBlocks, pistonClaim, intersectionHandler))
+        if (checkMultipleBlocks(pistonBlock.getWorld(),
+                blocks.stream().map(Block::getState).toList(), pistonClaim, intersectionHandler))
         {
             event.setCancelled(true);
         }
@@ -609,33 +610,47 @@ public class BlockEventHandler implements Listener
      * Check if claims conflict with a given BoundingBox.
      *
      * @param world the world
-     * @param boundingBox the area that may intersect a claim
+     * @param blocks the area that may intersect a claim
      * @param initiatingClaim the claim from which the action was initiated
      * @param precisePredicate a more accurate measure determining if a conflict actually occurs
      * @return true if a claim is determined to be intersecting with the bounding box
      */
-    private boolean boxConflictsWithClaims(
+    private boolean checkMultipleBlocks(
             @NotNull World world,
-            @NotNull BoundingBox boundingBox,
+            @NotNull Collection<BlockState> blocks,
             @Nullable Claim initiatingClaim,
             @NotNull BiPredicate<@NotNull Claim, @NotNull BoundingBox> precisePredicate)
     {
-        // Check potentially intersecting claims from chunks interacted with.
-        Set<Claim> chunkClaims = dataStore.getChunkClaims(world, boundingBox);
-        if (initiatingClaim != null)
-        {
-            chunkClaims.remove(initiatingClaim);
-        }
+        if (blocks.isEmpty()) return false;
 
-        for (Claim claim : chunkClaims)
+        // Get potentially intersecting claims from chunks interacted with.
+        BoundingBox boundingBox = BoundingBox.ofStates(blocks);
+        Set<Claim> chunkClaims = dataStore.getChunkClaims(world, boundingBox);
+
+        for (Claim claim: chunkClaims)
         {
-            BoundingBox claimBoundingBox = new BoundingBox(claim);
+            // Ignore initiating claim
+            if (claim == initiatingClaim)
+            {
+                continue;
+            }
 
             // Ensure claim intersects with block bounding box.
-            if (!claimBoundingBox.intersects(boundingBox)) continue;
+            BoundingBox claimBoundingBox = new BoundingBox(claim);
+            if (!claimBoundingBox.intersects(boundingBox))
+            {
+                continue;
+            }
 
-            // Do additional mode-based handling.
-            if (precisePredicate.test(claim, claimBoundingBox)) return true;
+            for (BlockState block: blocks)
+            {
+                if (claim.contains(block.getLocation(), false, true))
+                {
+                    // Do additional mode-based handling.
+                    if (precisePredicate.test(claim, claimBoundingBox)) return true;
+                    break;
+                }
+            }
         }
 
         return false;
@@ -650,7 +665,7 @@ public class BlockEventHandler implements Listener
     private @NotNull BiPredicate<@NotNull Claim, @NotNull BoundingBox> denyOtherOwnerIntersection(
             @Nullable Claim initiatingClaim)
     {
-        return (claim, claimBoundingBox) ->
+        return (claim, _) ->
         {
             // If owners are different, cancel.
             return initiatingClaim == null || !Objects.equals(initiatingClaim.getOwnerID(), claim.getOwnerID());
@@ -819,12 +834,11 @@ public class BlockEventHandler implements Listener
             @NotNull Consumer<Claim> cancelSourceConsumer)
     {
         Claim sourceClaim = null;
-        BoundingBox box = BoundingBox.ofStates(states);
         BiPredicate<@NotNull Claim, @NotNull BoundingBox> conflictCheck;
         if (player != null)
         {
             // If a player is present, check their permission in affected claims.
-            conflictCheck = (claim, boundingBox) ->
+            conflictCheck = (claim, _) ->
             {
                 Supplier<String> supplier = claim.checkPermission(player, ClaimPermission.Build, event);
                 if (supplier != null)
@@ -843,7 +857,7 @@ public class BlockEventHandler implements Listener
             conflictCheck = denyOtherOwnerIntersection(sourceClaim);
         }
 
-        if (boxConflictsWithClaims(source.getWorld(), box, sourceClaim, conflictCheck))
+        if (checkMultipleBlocks(source.getWorld(), states, sourceClaim, conflictCheck))
         {
             event.setCancelled(true);
             cancelSourceConsumer.accept(sourceClaim);
@@ -1214,11 +1228,11 @@ public class BlockEventHandler implements Listener
         if (entity == null)
         {
             // No entity always means denial.
-            predicate = (claim, claimBoundingBox) -> true;
+            predicate = (_, _) -> true;
         }
         else if (entity instanceof Player player)
         {
-            predicate = (claim, claimBoundingBox) ->
+            predicate = (claim, _) ->
             {
                 Supplier<String> noPortalReason = claim.checkPermission(player, ClaimPermission.Build, event);
 
@@ -1234,7 +1248,7 @@ public class BlockEventHandler implements Listener
         }
         else
         {
-            predicate = (claim, claimBoundingBox) ->
+            predicate = (_, _) ->
             {
                 // Non-player entities are denied and set on portal cooldown to prevent repeated attempts.
                 entity.setPortalCooldown(100);
@@ -1242,8 +1256,7 @@ public class BlockEventHandler implements Listener
             };
         }
 
-        BoundingBox box = BoundingBox.ofStates(event.getBlocks());
-        if (boxConflictsWithClaims(event.getWorld(), box, null, predicate))
+        if (checkMultipleBlocks(event.getWorld(), event.getBlocks(), null, predicate))
         {
             event.setCancelled(true);
         }

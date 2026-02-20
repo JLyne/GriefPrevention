@@ -239,7 +239,8 @@ public abstract class BoundaryVisualization
                 player,
                 claims.stream().map(claim -> new Boundary(
                         claim,
-                        claim.isAdminClaim() ? VisualizationType.ADMIN_CLAIM :  VisualizationType.CLAIM))
+                        claim.parent != null ? VisualizationType.SUBDIVISION :
+                                claim.isAdminClaim() ? VisualizationType.ADMIN_CLAIM :  VisualizationType.CLAIM))
                         .collect(Collectors.toSet()),
                 height);
         callAndVisualize(event);

@@ -637,6 +637,7 @@ public abstract class DataStore
                     if (claim.inDataStore && world.equals(claim.getLesserBoundaryCorner().getWorld()))
                     {
                         claims.add(claim);
+                        claims.addAll(claim.children);
                     }
                 }
             }
