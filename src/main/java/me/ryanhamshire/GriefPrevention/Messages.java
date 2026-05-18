@@ -74,7 +74,6 @@ public enum Messages
     NoDamageClaimedEntity("That belongs to {0}.", "0: owner name"),
     ShovelBasicClaimMode("Shovel returned to basic claims mode."),
     RemainingBlocks("You may claim up to {0} more blocks.", "0: remaining blocks"),
-    CreativeBasicsVideo2("Click for Land Claim Help: {0}", "{0}: video URL"),
     SurvivalBasicsVideo2("Click for Land Claim Help: {0}", "{0}: video URL"),
     TrappedChatKeyword("trapped;stuck", "When mentioned in chat, players get information about the /trapped command (multiple words can be separated with semi-colons)"),
     TrappedInstructions("Are you trapped in someone's land claim?  Try the /trapped command."),

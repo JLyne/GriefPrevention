@@ -51,7 +51,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockFertilizeEvent;
-import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
@@ -1021,7 +1020,6 @@ public class BlockEventHandler implements Listener
         //where from and where to?
         Location fromLocation = spreadEvent.getBlock().getLocation();
         Location toLocation = spreadEvent.getToBlock().getLocation();
-        boolean isInCreativeRulesWorld = GriefPrevention.instance.creativeRulesApply(toLocation);
         Claim fromClaim = this.dataStore.getClaimAt(fromLocation, false, lastSpreadFromClaim);
         Claim toClaim = this.dataStore.getClaimAt(toLocation, false, lastSpreadToClaim);
 
@@ -1031,7 +1029,7 @@ public class BlockEventHandler implements Listener
         this.lastSpreadFromClaim = fromClaim;
         this.lastSpreadToClaim = toClaim;
 
-        if (!isFluidFlowAllowed(fromClaim, toClaim, isInCreativeRulesWorld))
+        if (!isFluidFlowAllowed(fromClaim, toClaim))
         {
             spreadEvent.setCancelled(true);
         }
@@ -1042,15 +1040,10 @@ public class BlockEventHandler implements Listener
      *
      * @param from The claim at the source location of the fluid flow, or null if it's wilderness.
      * @param to The claim at the destination location of the fluid flow, or null if it's wilderness.
-     * @param creativeRulesApply Whether creative rules apply to the world where claims are located.
      * @return `true` if fluid flow is allowed, `false` otherwise.
      */
-    private boolean isFluidFlowAllowed(Claim from, Claim to, boolean creativeRulesApply)
+    private boolean isFluidFlowAllowed(Claim from, Claim to)
     {
-        // Special case: if in a world with creative rules,
-        // don't allow fluids to flow into wilderness.
-        if (creativeRulesApply && to == null) return false;
-
         // The fluid flow should be allowed or denied based on the specific combination
         // of source and destination claim types. The following matrix outlines these
         // combinations and indicates whether fluid flow should be permitted:
@@ -1098,26 +1091,6 @@ public class BlockEventHandler implements Listener
         return sameOwner;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onForm(BlockFormEvent event)
-    {
-        Block block = event.getBlock();
-        Location location = block.getLocation();
-
-        if (GriefPrevention.instance.creativeRulesApply(location))
-        {
-            Material type = block.getType();
-            if (type == Material.COBBLESTONE || type == Material.OBSIDIAN || type == Material.LAVA || type == Material.WATER)
-            {
-                Claim claim = GriefPrevention.instance.dataStore.getClaimAt(location, false, null);
-                if (claim == null)
-                {
-                    event.setCancelled(true);
-                }
-            }
-        }
-    }
-
     //ensures dispensers can't be used to dispense a block(like water or lava) or item across a claim boundary
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onDispense(BlockDispenseEvent dispenseEvent)
@@ -1134,14 +1107,6 @@ public class BlockEventHandler implements Listener
         Block toBlock = fromBlock.getRelative(dispenser.getFacing());
         Claim fromClaim = this.dataStore.getClaimAt(fromBlock.getLocation(), false, null);
         Claim toClaim = this.dataStore.getClaimAt(toBlock.getLocation(), false, fromClaim);
-
-        //into wilderness is NOT OK in creative mode worlds
-        Material materialDispensed = dispenseEvent.getItem().getType();
-        if ((materialDispensed == Material.WATER_BUCKET || materialDispensed == Material.LAVA_BUCKET) && GriefPrevention.instance.creativeRulesApply(dispenseEvent.getBlock().getLocation()) && toClaim == null)
-        {
-            dispenseEvent.setCancelled(true);
-            return;
-        }
 
         //wilderness to wilderness is OK
         if (fromClaim == null && toClaim == null) return;

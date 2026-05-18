@@ -3,7 +3,6 @@ package com.griefprevention.protection;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.ClaimsMode;
-import me.ryanhamshire.GriefPrevention.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.Messages;
 import me.ryanhamshire.GriefPrevention.PlayerData;
@@ -58,7 +57,7 @@ public final class ProtectionHelper
         if (claim == null)
         {
             ClaimsMode mode = GriefPrevention.instance.config_claims_worldModes.get(world);
-            if (mode == ClaimsMode.Creative || mode == ClaimsMode.SurvivalRequiringClaims)
+            if (mode == ClaimsMode.SurvivalRequiringClaims)
             {
                 // Allow placing chest if it would create an automatic claim.
                 if (trigger instanceof BlockPlaceEvent placeEvent
@@ -73,7 +72,6 @@ public final class ProtectionHelper
                     String reason = GriefPrevention.instance.dataStore.getMessage(Messages.NoBuildOutsideClaims);
                     if (player.hasPermission("griefprevention.ignoreclaims"))
                         reason += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    reason += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                     return reason;
                 };
             }

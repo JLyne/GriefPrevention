@@ -48,8 +48,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.CauldronLevelChangeEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityBreakDoorEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -57,7 +55,6 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityMountEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.ExpBottleEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
@@ -214,14 +211,6 @@ public class EntityEventHandler implements Listener
             return;
         }
 
-        //in creative mode worlds, never form the block
-        if (claimsMode == ClaimsMode.Creative)
-        {
-            event.setCancelled(true);
-            fallingBlock.remove();
-            return;
-        }
-
         //in other worlds, if landing in land claim, only allow if source was also in the land claim
         Claim claim = this.dataStore.getClaimAt(blockLocation, false, null);
 
@@ -265,13 +254,6 @@ public class EntityEventHandler implements Listener
         // Wilderness rules
         if (claim == null)
         {
-            // No modification in the wilderness in creative mode.
-            if (instance.creativeRulesApply(block.getLocation()) || instance.config_claims_worldModes.get(block.getWorld()) == ClaimsMode.SurvivalRequiringClaims)
-            {
-                event.setCancelled(true);
-                return;
-            }
-
             // Unclaimed area is fair game.
             return;
         }
@@ -533,17 +515,6 @@ public class EntityEventHandler implements Listener
 
         boolean applySurfaceRules = world.getEnvironment() == Environment.NORMAL && ((isCreeper && GriefPrevention.instance.config_blockSurfaceCreeperExplosions) || (!isCreeper && GriefPrevention.instance.config_blockSurfaceOtherExplosions));
 
-        //special rule for creative worlds: explosions don't destroy anything
-        if (GriefPrevention.instance.creativeRulesApply(location))
-        {
-            for (int i = 0; i < blocks.size(); i++)
-            {
-                blocks.remove(i--);
-            }
-
-            return;
-        }
-
         //make a list of blocks which were allowed to explode
         List<Block> explodedBlocks = new ArrayList<>();
         Claim cachedClaim = null;
@@ -585,12 +556,6 @@ public class EntityEventHandler implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onItemSpawn(ItemSpawnEvent event)
     {
-        //if in a creative world, cancel the event (don't drop items on the ground)
-        if (GriefPrevention.instance.creativeRulesApply(event.getLocation()))
-        {
-            event.setCancelled(true);
-        }
-
         //if item is on watch list, apply protection
         ArrayList<PendingItemProtection> watchList = GriefPrevention.instance.pendingItemWatchList;
         Item newItem = event.getEntity();
@@ -636,53 +601,11 @@ public class EntityEventHandler implements Listener
         }
     }
 
-    //when an experience bottle explodes...
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onExpBottle(ExpBottleEvent event)
-    {
-        //if in a creative world, cancel the event (don't drop exp on the ground)
-        if (GriefPrevention.instance.creativeRulesApply(event.getEntity().getLocation()))
-        {
-            event.setExperience(0);
-        }
-    }
-
-    //when a creature spawns...
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onEntitySpawn(CreatureSpawnEvent event)
-    {
-        //these rules apply only to creative worlds
-        if (!GriefPrevention.instance.creativeRulesApply(event.getLocation())) return;
-
-        //chicken eggs and breeding could potentially make a mess in the wilderness, once griefers get involved
-        SpawnReason reason = event.getSpawnReason();
-        if (reason != SpawnReason.SPAWNER_EGG && reason != SpawnReason.BUILD_IRONGOLEM && reason != SpawnReason.BUILD_SNOWMAN && event.getEntityType() != EntityType.ARMOR_STAND)
-        {
-            event.setCancelled(true);
-            return;
-        }
-
-        //otherwise, no spawning in the wilderness!
-        Claim claim = this.dataStore.getClaimAt(event.getLocation(), false, null);
-        if (claim == null)
-        {
-            event.setCancelled(true);
-            return;
-        }
-    }
-
     //when an entity dies...
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event)
     {
         LivingEntity entity = event.getEntity();
-
-        //special rule for creative worlds: killed entities don't drop items or experience orbs
-        if (GriefPrevention.instance.creativeRulesApply(entity.getLocation()))
-        {
-            event.setDroppedExp(0);
-            event.getDrops().clear();
-        }
 
         //FEATURE: lock dropped items to player who dropped them
         if (!(entity instanceof Player player))

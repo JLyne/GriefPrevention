@@ -64,7 +64,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerFishEvent;
@@ -161,14 +160,7 @@ class PlayerEventHandler implements Listener
 
         if (this.howToClaimPattern.matcher(message).matches())
         {
-            if (instance.creativeRulesApply(player.getLocation()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.CreativeBasicsVideo2, 10L, DataStore.CREATIVE_VIDEO_URL);
-            }
-            else
-            {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.SurvivalBasicsVideo2, 10L, DataStore.SURVIVAL_VIDEO_URL);
-            }
+            GriefPrevention.sendMessage(player, TextMode.Info, Messages.SurvivalBasicsVideo2, 10L, DataStore.SURVIVAL_VIDEO_URL);
         }
 
         //FEATURE: automatically educate players about the /trapped command
@@ -440,20 +432,6 @@ class PlayerEventHandler implements Listener
         this.recentLoginLogoutNotifications.add(now);
 
         return this.recentLoginLogoutNotifications.size() > instance.config_spam_loginLogoutNotificationsPerMinute;
-    }
-
-    //when a player drops an item
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerDropItem(PlayerDropItemEvent event)
-    {
-        Player player = event.getPlayer();
-
-        //in creative worlds, dropping items is blocked
-        if (instance.creativeRulesApply(player.getLocation()))
-        {
-            event.setCancelled(true);
-            return;
-        }
     }
 
     //when a player teleports
@@ -821,20 +799,6 @@ class PlayerEventHandler implements Listener
             minLavaDistance = 3;
         }
 
-        //otherwise no wilderness dumping in creative mode worlds
-        else if (instance.creativeRulesApply(block.getLocation()))
-        {
-            if (block.getY() >= instance.getSeaLevel(block.getWorld()) - 5 && !player.hasPermission("griefprevention.lava"))
-            {
-                if (bucketEvent.getBucket() == Material.LAVA_BUCKET)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoWildernessBuckets);
-                    bucketEvent.setCancelled(true);
-                    return;
-                }
-            }
-        }
-
         //lava buckets can't be dumped near other players unless enabled
         if (!doesAllowLavaProximityInWorld(block.getWorld()) && !player.hasPermission("griefprevention.lava"))
         {
@@ -1180,8 +1144,7 @@ class PlayerEventHandler implements Listener
                             materialInHand == Material.FURNACE_MINECART ||
                             materialInHand == Material.CHEST_MINECART ||
                             materialInHand == Material.TNT_MINECART ||
-                            materialInHand == Material.HOPPER_MINECART) &&
-                    !instance.creativeRulesApply(clickedBlock.getLocation()))
+                            materialInHand == Material.HOPPER_MINECART))
             {
                 if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
                 Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);

@@ -191,12 +191,8 @@ public class ClaimCommand extends CommandHandler
         {
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
 
-            //link to a video demo of land claiming, based on world type
-            if (plugin.creativeRulesApply(player.getLocation()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
-            }
-            else if (plugin.claimsEnabledForWorld(world))
+            //link to a video demo of land claiming
+            if (plugin.claimsEnabledForWorld(world))
             {
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
             }
