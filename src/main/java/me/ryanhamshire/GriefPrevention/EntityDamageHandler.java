@@ -741,21 +741,6 @@ public class EntityDamageHandler implements Listener
                     }
                 }
             }
-
-            //Otherwise, ignore potions not thrown by players
-            if (thrower == null) return;
-
-            //otherwise, no restrictions for positive effects
-            if (effectType.getCategory() == PotionEffectTypeCategory.BENEFICIAL) continue;
-
-            for (LivingEntity affected : event.getAffectedEntities())
-            {
-                //always impact the thrower
-                if (affected == thrower) continue;
-
-                //always impact non players
-                if (!(affected instanceof Player affectedPlayer)) continue;
-            }
         }
     }
 
