@@ -1258,9 +1258,9 @@ class PlayerEventHandler implements Listener
                         {
                             claim = claim.parent;
                         }
-                        Date lastLogin = new Date(Bukkit.getOfflinePlayer(claim.ownerID).getLastPlayed());
+                        Date lastSeen = new Date(Bukkit.getOfflinePlayer(claim.ownerID).getLastSeen());
                         Date now = new Date();
-                        long daysElapsed = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+                        long daysElapsed = (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60 * 24);
 
                         GriefPrevention.sendMessage(player, TextMode.Info, Messages.PlayerOfflineTime, String.valueOf(daysElapsed));
 

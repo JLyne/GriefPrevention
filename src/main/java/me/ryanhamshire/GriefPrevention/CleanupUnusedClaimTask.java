@@ -57,7 +57,7 @@ class CleanupUnusedClaimTask implements Runnable
             //if the owner has been gone at least a week, and if he has ONLY the new player claim, it will be removed
             Calendar sevenDaysAgo = Calendar.getInstance();
             sevenDaysAgo.add(Calendar.DATE, -GriefPrevention.instance.config_claims_chestClaimExpirationDays);
-            if (sevenDaysAgo.getTime().after(new Date(ownerInfo.getLastPlayed())))
+            if (sevenDaysAgo.getTime().after(new Date(ownerInfo.getLastSeen())))
             {
                 if (expireEventCanceled())
                     return;
@@ -70,10 +70,10 @@ class CleanupUnusedClaimTask implements Runnable
         //if configured to always remove claims after some inactivity period without exceptions...
         else if (GriefPrevention.instance.config_claims_expirationDays > 0)
         {
-            Calendar earliestPermissibleLastLogin = Calendar.getInstance();
-            earliestPermissibleLastLogin.add(Calendar.DATE, -GriefPrevention.instance.config_claims_expirationDays);
+            Calendar earliestPermissibleLastSeen = Calendar.getInstance();
+            earliestPermissibleLastSeen.add(Calendar.DATE, -GriefPrevention.instance.config_claims_expirationDays);
 
-            if (earliestPermissibleLastLogin.getTime().after(new Date(ownerInfo.getLastPlayed())))
+            if (earliestPermissibleLastSeen.getTime().after(new Date(ownerInfo.getLastSeen())))
             {
                 if (expireEventCanceled())
                     return;
@@ -83,8 +83,8 @@ class CleanupUnusedClaimTask implements Runnable
                 //delete them
                 GriefPrevention.instance.dataStore.deleteClaimsForPlayer(claim.ownerID, true);
                 GriefPrevention.AddLogEntry(" All of " + claim.getOwnerName() + "'s claims have expired.", CustomLogEntryTypes.AdminActivity);
-                GriefPrevention.AddLogEntry("earliestPermissibleLastLogin#getTime: " + earliestPermissibleLastLogin.getTime(), CustomLogEntryTypes.Debug, true);
-                GriefPrevention.AddLogEntry("ownerInfo#getLastPlayed: " + ownerInfo.getLastPlayed(), CustomLogEntryTypes.Debug, true);
+                GriefPrevention.AddLogEntry("earliestPermissibleLastSeen#getTime: " + earliestPermissibleLastSeen.getTime(), CustomLogEntryTypes.Debug, true);
+                GriefPrevention.AddLogEntry("ownerInfo#getLastSeen: " + ownerInfo.getLastSeen(), CustomLogEntryTypes.Debug, true);
             }
         }
     }

@@ -425,7 +425,7 @@ public class DatabaseDataStore extends DataStore
             OfflinePlayer player = Bukkit.getOfflinePlayer(UUID.fromString(playerID));
 
             SimpleDateFormat sqlFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String dateString = sqlFormat.format(new Date(player.getLastPlayed()));
+            String dateString = sqlFormat.format(new Date(player.getLastSeen()));
             deleteStmnt.setString(1, playerID);
             deleteStmnt.executeUpdate();
 

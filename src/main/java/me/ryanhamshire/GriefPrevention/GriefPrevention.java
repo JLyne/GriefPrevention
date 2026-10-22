@@ -2281,8 +2281,7 @@ public class GriefPrevention extends JavaPlugin
                 try
                 {
                     UUID playerID = player.getUniqueId();
-                    if (playerID == null) continue;
-                    long lastSeen = player.getLastPlayed();
+                    long lastSeen = player.getLastSeen();
 
                     //if the player has been seen in the last 90 days, cache his name/UUID pair
                     long diff = now - lastSeen;

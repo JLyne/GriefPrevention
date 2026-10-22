@@ -51,9 +51,9 @@ class CleanupUnusedClaimPreTask implements Runnable
             GriefPrevention.AddLogEntry("Player is online. Ignoring.", CustomLogEntryTypes.Debug, true);
             return;
         }
-        if (ownerInfo.getLastPlayed() <= 0)
+        if (ownerInfo.getLastSeen() <= 0)
         {
-            GriefPrevention.AddLogEntry("Player is new or not in the server's cached userdata. Ignoring. getLastPlayed = " + ownerInfo.getLastPlayed(), CustomLogEntryTypes.Debug, true);
+            GriefPrevention.AddLogEntry("Player is new or not in the server's cached userdata. Ignoring. getLastSeen = " + ownerInfo.getLastSeen(), CustomLogEntryTypes.Debug, true);
             return;
         }
 
