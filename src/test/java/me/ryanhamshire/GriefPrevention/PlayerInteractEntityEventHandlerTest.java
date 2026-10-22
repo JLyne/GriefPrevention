@@ -8,7 +8,7 @@ import org.bukkit.World;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.HorseInventory;
 import org.bukkit.inventory.ItemStack;
@@ -81,12 +81,12 @@ public class PlayerInteractEntityEventHandlerTest
         when(horse.isTamed()).thenReturn(false);
         when(horse.getInventory()).thenReturn(inventory);
 
-        PlayerInteractEntityEvent event = mock(PlayerInteractEntityEvent.class);
+        PlayerInteractAtEntityEvent event = mock(PlayerInteractAtEntityEvent.class);
         when(event.getPlayer()).thenReturn(player);
         when(event.getRightClicked()).thenReturn(horse);
         when(event.getHand()).thenReturn(EquipmentSlot.HAND);
 
-        new PlayerEventHandler(dataStore, plugin).onPlayerInteractEntity(event);
+        new PlayerEventHandler(dataStore, plugin).onPlayerInteractAtEntity(event);
 
         verify(inventory, never()).clear();
         verify(horse, never()).setOwner(null);

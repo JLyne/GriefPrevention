@@ -486,17 +486,6 @@ class PlayerEventHandler implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event)
     {
-        //treat it the same as interacting with an entity in general
-        if (event.getRightClicked().getType() == EntityType.ARMOR_STAND)
-        {
-            this.onPlayerInteractEntity((PlayerInteractEntityEvent) event);
-        }
-    }
-
-    //when a player interacts with an entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent event)
-    {
         Player player = event.getPlayer();
         Entity entity = event.getRightClicked();
 
@@ -1111,7 +1100,7 @@ class PlayerEventHandler implements Listener
                     || materialInHand == Material.INK_SAC
                     || materialInHand == Material.GLOW_INK_SAC
                     || materialInHand == Material.HONEYCOMB
-                    || MaterialTags.DYES.isTagged(materialInHand)))
+                    || Tag.ITEMS_DYES.isTagged(materialInHand)))
             {
                 Supplier<String> noBuildReason = ProtectionHelper.checkPermission(player, event.getClickedBlock().getLocation(), ClaimPermission.Build, event);
                 if (noBuildReason != null)

@@ -19,6 +19,8 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.protection.ProtectionHelper;
+import io.papermc.paper.event.entity.EntityBreakByEntityEvent;
+import io.papermc.paper.event.entity.EntityBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.ProtectDeathDropsEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ExplosionResult;
@@ -686,6 +688,51 @@ public class EntityEventHandler implements Listener
 
         //only allow players to break paintings, not anything else (like water and explosions)
         if (!(event instanceof HangingBreakByEntityEvent entityEvent))
+        {
+            event.setCancelled(true);
+            return;
+        }
+
+        //who is removing it?
+        Entity remover = entityEvent.getRemover();
+
+        //again, making sure the breaker is a player
+        if (!(remover instanceof Player playerRemover))
+        {
+            event.setCancelled(true);
+            return;
+        }
+
+        //if the player doesn't have build permission, don't allow the breakage
+        Supplier<String> noBuildReason = ProtectionHelper.checkPermission(playerRemover, event.getEntity().getLocation(), ClaimPermission.Build, event);
+        if (noBuildReason != null)
+        {
+            event.setCancelled(true);
+            GriefPrevention.sendMessage(playerRemover, TextMode.Err, noBuildReason.get());
+        }
+    }
+
+    //when a painting is broken
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    public void onEntityBreak(EntityBreakEvent event)
+    {
+        //don't track in worlds where claims are not enabled
+        if (!GriefPrevention.instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
+
+        //Ignore cases where itemframes should break due to no supporting blocks
+        if (event.getCause() == EntityBreakEvent.RemoveCause.PHYSICS) return;
+
+        //FEATURE: claimed paintings are protected from breakage
+
+        //explosions don't destroy hangings
+        if (event.getCause() == EntityBreakEvent.RemoveCause.EXPLOSION)
+        {
+            event.setCancelled(true);
+            return;
+        }
+
+        //only allow players to break paintings, not anything else (like water and explosions)
+        if (!(event instanceof EntityBreakByEntityEvent entityEvent))
         {
             event.setCancelled(true);
             return;
