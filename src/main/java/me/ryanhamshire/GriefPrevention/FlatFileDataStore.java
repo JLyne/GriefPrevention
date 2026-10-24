@@ -48,13 +48,6 @@ public class FlatFileDataStore extends DataStore
     private final static String nextClaimIdFilePath = claimDataFolderPath + File.separator + "_nextClaimID";
     private final static String schemaVersionFilePath = dataLayerFolderPath + File.separator + "_schemaVersion";
 
-    static boolean hasData()
-    {
-        File claimsDataFolder = new File(claimDataFolderPath);
-
-        return claimsDataFolder.exists();
-    }
-
     //initialization!
     FlatFileDataStore() throws Exception
     {
@@ -65,20 +58,12 @@ public class FlatFileDataStore extends DataStore
     void initialize() throws Exception
     {
         //ensure data folders exist
-        boolean newDataStore = false;
         File playerDataFolder = new File(playerDataFolderPath);
         File claimDataFolder = new File(claimDataFolderPath);
         if (!playerDataFolder.exists() || !claimDataFolder.exists())
         {
-            newDataStore = true;
             playerDataFolder.mkdirs();
             claimDataFolder.mkdirs();
-        }
-
-        //if there's no data yet, then anything written will use the schema implemented by this code
-        if (newDataStore)
-        {
-            this.setSchemaVersion(DataStore.latestSchemaVersion);
         }
 
         //load next claim number from file
@@ -107,9 +92,7 @@ public class FlatFileDataStore extends DataStore
 
         //load claims data into memory
         //get a list of all the files in the claims data folder
-        File[] files = claimDataFolder.listFiles();
-
-        this.loadClaimData(files);
+        this.loadClaimData(claimDataFolder.listFiles());
 
         super.initialize();
     }
