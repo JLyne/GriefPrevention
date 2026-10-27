@@ -1061,6 +1061,7 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.DAYLIGHT_DETECTOR ||
                                 clickedBlockType == Material.COMPARATOR ||
                                 clickedBlockType == Material.REDSTONE_WIRE ||
+                                clickedBlockType == Material.STRAW_BED ||
                                 Tag.FLOWER_POTS.isTagged(clickedBlockType) ||
                                 Tag.CANDLES.isTagged(clickedBlockType) ||
                                 Tag.COPPER_GOLEM_STATUES.isTagged(clickedBlockType)
