@@ -1101,6 +1101,7 @@ class PlayerEventHandler implements Listener
                     || materialInHand == Material.INK_SAC
                     || materialInHand == Material.GLOW_INK_SAC
                     || materialInHand == Material.HONEYCOMB
+                    || Tag.ITEMS_CUSHIONS.isTagged(materialInHand)
                     || Tag.ITEMS_DYES.isTagged(materialInHand)))
             {
                 Supplier<String> noBuildReason = ProtectionHelper.checkPermission(player, event.getClickedBlock().getLocation(), ClaimPermission.Build, event);
