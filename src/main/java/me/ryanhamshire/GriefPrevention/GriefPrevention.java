@@ -23,7 +23,6 @@ import com.google.common.cache.CacheBuilder;
 import com.griefprevention.commands.ClaimCommand;
 import com.griefprevention.commands.TabCompletions;
 import com.griefprevention.protection.InteractionProtectionHandler;
-import com.griefprevention.protection.ProtectionHelper;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
@@ -44,8 +43,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
@@ -2385,113 +2382,6 @@ public class GriefPrevention extends JavaPlugin
     {
         ClaimsMode mode = this.config_claims_worldModes.get(world);
         return mode != null && mode != ClaimsMode.Disabled;
-    }
-
-    /**
-     * @deprecated use {@link ProtectionHelper#checkPermission(Player, Location, ClaimPermission, org.bukkit.event.Event)}
-     */
-    @Deprecated(forRemoval = true, since = "17.0.0")
-    public @Nullable String allowBuild(Player player, Location location)
-    {
-        return this.allowBuild(player, location, location.getBlock().getType());
-    }
-
-    /**
-     * @deprecated use {@link ProtectionHelper#checkPermission(Player, Location, ClaimPermission, org.bukkit.event.Event)}
-     */
-    @Deprecated(forRemoval = true, since = "17.0.0")
-    public @Nullable String allowBuild(Player player, Location location, Material material)
-    {
-        if (!GriefPrevention.instance.claimsEnabledForWorld(location.getWorld())) return null;
-
-        ItemStack placed;
-        if (material.isItem())
-        {
-            placed = ItemStack.of(material);
-        }
-        else
-        {
-            var blockType = material.asBlockType();
-            if (blockType != null && blockType.hasItemType())
-            {
-                placed = blockType.getItemType().createItemStack();
-            }
-            else
-            {
-                placed = ItemStack.of(Material.DIRT);
-            }
-        }
-
-        Block block = location.getBlock();
-        Supplier<String> result = ProtectionHelper.checkPermission(player, location, ClaimPermission.Build, new BlockPlaceEvent(block, block.getState(), block, placed, player, true, EquipmentSlot.HAND));
-        return result == null ? null : result.get();
-    }
-
-    /**
-     * @deprecated use {@link ProtectionHelper#checkPermission(Player, Location, ClaimPermission, org.bukkit.event.Event)}
-     */
-    @Deprecated(forRemoval = true, since = "17.0.0")
-    public @Nullable String allowBreak(Player player, Block block, Location location)
-    {
-        return this.allowBreak(player, block, location, new BlockBreakEvent(block, player));
-    }
-
-    /**
-     * @deprecated use {@link ProtectionHelper#checkPermission(Player, Location, ClaimPermission, org.bukkit.event.Event)}
-     */
-    @Deprecated(forRemoval = true, since = "17.0.0")
-    public @Nullable String allowBreak(Player player, Material material, Location location, BlockBreakEvent breakEvent)
-    {
-        return this.allowBreak(player, location.getBlock(), location, breakEvent);
-    }
-
-    /**
-     * @deprecated use {@link ProtectionHelper#checkPermission(Player, Location, ClaimPermission, org.bukkit.event.Event)}
-     */
-    @Deprecated(forRemoval = true, since = "17.0.0")
-    public @Nullable String allowBreak(Player player, Block block, Location location, BlockBreakEvent breakEvent)
-    {
-        Supplier<String> result = ProtectionHelper.checkPermission(player, location, ClaimPermission.Build, breakEvent);
-        return result == null ? null : result.get();
-    }
-
-    private Set<Material> parseMaterialListFromConfig(List<String> stringsToParse)
-    {
-        Set<Material> materials = new HashSet<>();
-
-        //for each string in the list
-        for (int i = 0; i < stringsToParse.size(); i++)
-        {
-            String string = stringsToParse.get(i);
-
-            //defensive coding
-            if (string == null) continue;
-
-            //try to parse the string value into a material
-            Material material = Material.getMaterial(string.toUpperCase());
-
-            //null value returned indicates an error parsing the string from the config file
-            if (material == null)
-            {
-                //check if string has failed validity before
-                if (!string.contains("can't"))
-                {
-                    //update string, which will go out to config file to help user find the error entry
-                    stringsToParse.set(i, string + "     <-- can't understand this entry, see BukkitDev documentation");
-
-                    //warn about invalid material in log
-                    GriefPrevention.AddLogEntry(String.format("ERROR: Invalid material %s.  Please update your config.yml.", string));
-                }
-            }
-
-            //otherwise material is valid, add it
-            else
-            {
-                materials.add(material);
-            }
-        }
-
-        return materials;
     }
 
     public int getSeaLevel(World world)
